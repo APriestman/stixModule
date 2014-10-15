@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import org.mitre.cybox.common_2.ConditionApplicationEnum;
 
 import org.mitre.cybox.objects.FileObjectType;
 import org.mitre.cybox.objects.WindowsExecutableFileObjectType;
@@ -149,7 +150,9 @@ public class EvalFileObj implements EvaluatableObject{
                         try{
                             String result = convertTimestampString(winExe.getHeaders().getFileHeader().getTimeDateStamp().getValue().toString());
                             String newClause = processNumericFields(result, 
-                                    winExe.getHeaders().getFileHeader().getTimeDateStamp().getCondition(), "crtime");
+                                    winExe.getHeaders().getFileHeader().getTimeDateStamp().getCondition(),
+                                    winExe.getHeaders().getFileHeader().getTimeDateStamp().getApplyCondition(),
+                                    "crtime");
                             whereClause = addClause(whereClause, newClause);
                         }
                         catch(TskCoreException ex){
@@ -198,78 +201,167 @@ public class EvalFileObj implements EvaluatableObject{
     private static String processULongObject(UnsignedLongObjectPropertyType longObj, String fieldName)
         throws TskCoreException{
         
-        return processNumericFields(longObj.getValue().toString(), longObj.getCondition(), fieldName);
+        return processNumericFields(longObj.getValue().toString(), longObj.getCondition(), 
+                longObj.getApplyCondition(), fieldName);
     }
     
-    private static String processNumericFields(String valueStr, ConditionTypeEnum condition, String fieldName)
+    private static String processNumericFields(String valueStr, ConditionTypeEnum typeCondition, 
+            ConditionApplicationEnum applyCondition, String fieldName)
         throws TskCoreException{
         
-        if((condition == null) ||
-            (condition == ConditionTypeEnum.EQUALS)){
+        if((typeCondition == null) || 
+                ((typeCondition != ConditionTypeEnum.INCLUSIVE_BETWEEN) && 
+                (typeCondition != ConditionTypeEnum.EXCLUSIVE_BETWEEN))){
             
-            return (fieldName + "=" + valueStr);
-        }
-        else if(condition == ConditionTypeEnum.DOES_NOT_EQUAL){
-            return (fieldName + "!=" + valueStr);
-        }
-        else if(condition == ConditionTypeEnum.GREATER_THAN){
-            return (fieldName + ">" + valueStr);
-        }
-        else if(condition == ConditionTypeEnum.GREATER_THAN_OR_EQUAL){
-            return (fieldName + ">=" + valueStr);
-        }
-        else if(condition == ConditionTypeEnum.LESS_THAN){
-            return (fieldName + "<" + valueStr);
-        }
-        else if(condition == ConditionTypeEnum.LESS_THAN_OR_EQUAL){
-            return (fieldName + "<=" + valueStr);
-        }
-        else if(condition == ConditionTypeEnum.INCLUSIVE_BETWEEN){
-            String[] parts = valueStr.split("##comma##");
-            if(parts.length != 2){
-                throw new TskCoreException("Unexpected number of arguments in INCLUSIVE_BETWEEN on " + fieldName 
-                        + "(" + valueStr + ")");
+            String fullClause = "";
+
+            if(valueStr.isEmpty()){
+                throw new TskCoreException("Empty value field");
             }
-            return (fieldName + ">=" + parts[0] + " AND " + fieldName + "<=" + parts[1]);
-        }
-        else if(condition == ConditionTypeEnum.EXCLUSIVE_BETWEEN){
+
             String[] parts = valueStr.split("##comma##");
-            if(parts.length != 2){
-                throw new TskCoreException("Unexpected number of arguments in EXCLUSIVE_BETWEEN on " + fieldName 
-                        + "(" + valueStr + ")");
+
+            for(String valuePart:parts){
+                String partialClause;            
+            
+                if((typeCondition == null) ||
+                    (typeCondition == ConditionTypeEnum.EQUALS)){
+
+                    partialClause = fieldName + "=" + valuePart;
+                }
+                else if(typeCondition == ConditionTypeEnum.DOES_NOT_EQUAL){
+                    partialClause = fieldName + "!=" + valuePart;
+                }
+                else if(typeCondition == ConditionTypeEnum.GREATER_THAN){
+                    partialClause = fieldName + ">" + valuePart;
+                }
+                else if(typeCondition == ConditionTypeEnum.GREATER_THAN_OR_EQUAL){
+                    partialClause = fieldName + ">=" + valuePart;
+                }
+                else if(typeCondition == ConditionTypeEnum.LESS_THAN){
+                    partialClause = fieldName + "<" + valuePart;
+                }
+                else if(typeCondition == ConditionTypeEnum.LESS_THAN_OR_EQUAL){
+                    partialClause = fieldName + "<=" + valuePart;
+                }
+                else{
+                    throw new TskCoreException("Could not process condition " + typeCondition.value() + " on " + fieldName);
+                }
+                
+                if(fullClause.isEmpty()){
+                
+                    if(parts.length > 1){
+                        fullClause += "( ";
+                    }
+                    if(applyCondition == ConditionApplicationEnum.NONE){
+                        fullClause += " NOT ";
+                    }
+                    fullClause += partialClause;
+                }
+                else{
+                    if(applyCondition == ConditionApplicationEnum.ALL){
+                        fullClause += " AND " + partialClause;
+                    }
+                    else if(applyCondition == ConditionApplicationEnum.NONE){
+                        fullClause += " AND NOT " + partialClause;
+                    }
+                    else{
+                        fullClause += " OR " + partialClause;
+                    }   
+                }
             }
-            return (fieldName + ">" + parts[0] + " AND " + fieldName + "<" + parts[1]);
+            
+            if(parts.length > 1){
+                fullClause += " )";
+            }
+
+            return fullClause;
         }
         else{
-            throw new TskCoreException("Could not process condition " + condition.value() + " on " + fieldName);
+            // I don't think apply conditions make sense for these two.
+            if(typeCondition == ConditionTypeEnum.INCLUSIVE_BETWEEN){
+                String[] parts = valueStr.split("##comma##");
+                if(parts.length != 2){
+                    throw new TskCoreException("Unexpected number of arguments in INCLUSIVE_BETWEEN on " + fieldName 
+                            + "(" + valueStr + ")");
+                }
+                return (fieldName + ">=" + parts[0] + " AND " + fieldName + "<=" + parts[1]);
+            }
+            else{
+                String[] parts = valueStr.split("##comma##");
+                if(parts.length != 2){
+                    throw new TskCoreException("Unexpected number of arguments in EXCLUSIVE_BETWEEN on " + fieldName 
+                            + "(" + valueStr + ")");
+                }
+                return (fieldName + ">" + parts[0] + " AND " + fieldName + "<" + parts[1]);
+            }
         }
     }
     
     private static String processStringObject(StringObjectPropertyType stringObj, String fieldName)
         throws TskCoreException{
         
-        if((stringObj.getCondition() == null) ||
-                (stringObj.getCondition() == ConditionTypeEnum.EQUALS)){
-            return (fieldName + "=\'" + stringObj.getValue() + "\'");
+        String fullClause = "";
+        
+        if(stringObj.getValue().toString().isEmpty()){
+            throw new TskCoreException("Empty value field");
         }
-        else if(stringObj.getCondition() == ConditionTypeEnum.DOES_NOT_EQUAL){
-            return (fieldName + " !=\'%" + stringObj.getValue() + "%\'");
+        
+        String[] parts = stringObj.getValue().toString().split("##comma##");
+        
+        for(String value:parts){
+            String partialClause;
+            if((stringObj.getCondition() == null) ||
+                    (stringObj.getCondition() == ConditionTypeEnum.EQUALS)){
+                partialClause = fieldName + "=\'" + value + "\'";
+            }
+            else if(stringObj.getCondition() == ConditionTypeEnum.DOES_NOT_EQUAL){
+                partialClause = fieldName + " !=\'%" + value + "%\'";
+            }
+            else if(stringObj.getCondition() == ConditionTypeEnum.CONTAINS){
+                partialClause = fieldName + " LIKE \'%" + value + "%\'";
+            }
+            else if(stringObj.getCondition() == ConditionTypeEnum.DOES_NOT_CONTAIN){
+                partialClause = fieldName + " NOT LIKE \'%" + value + "%\'";
+            }
+            else if(stringObj.getCondition() == ConditionTypeEnum.STARTS_WITH){
+                partialClause = fieldName + " LIKE \'" + value + "%\'";
+            }
+            else if(stringObj.getCondition() == ConditionTypeEnum.ENDS_WITH){
+                partialClause = fieldName + " LIKE \'%" + value + "\'";
+            }
+            else{
+                throw new TskCoreException("Could not process condition " + stringObj.getCondition().value() + " on " + fieldName);
+            }
+            
+            if(fullClause.isEmpty()){
+                
+                if(parts.length > 1){
+                    fullClause += "( ";
+                }
+                if(stringObj.getApplyCondition() == ConditionApplicationEnum.NONE){
+                    fullClause += " NOT ";
+                }
+                fullClause += partialClause;
+            }
+            else{
+                if(stringObj.getApplyCondition() == ConditionApplicationEnum.ALL){
+                    fullClause += " AND " + partialClause;
+                }
+                else if(stringObj.getApplyCondition() == ConditionApplicationEnum.NONE){
+                    fullClause += " AND NOT " + partialClause;
+                }
+                else{
+                    fullClause += " OR " + partialClause;
+                }   
+            }
         }
-        else if(stringObj.getCondition() == ConditionTypeEnum.CONTAINS){
-            return (fieldName + " LIKE \'%" + stringObj.getValue() + "%\'");
+        
+        if(parts.length > 1){
+            fullClause += " )";
         }
-        else if(stringObj.getCondition() == ConditionTypeEnum.DOES_NOT_CONTAIN){
-            return (fieldName + " NOT LIKE \'%" + stringObj.getValue() + "%\'");
-        }
-        else if(stringObj.getCondition() == ConditionTypeEnum.STARTS_WITH){
-            return (fieldName + " LIKE \'" + stringObj.getValue() + "%\'");
-        }
-        else if(stringObj.getCondition() == ConditionTypeEnum.ENDS_WITH){
-            return (fieldName + " LIKE \'%" + stringObj.getValue() + "\'");
-        }
-        else{
-            throw new TskCoreException("Could not process condition " + stringObj.getCondition().value() + " on " + fieldName);
-        }
+        
+        return fullClause;
     }
     
     private static String processTimestampObject(DateTimeObjectPropertyType dateObj, String fieldName)
@@ -279,7 +371,7 @@ public class EvalFileObj implements EvaluatableObject{
 
             // Change the string into unix timestamps
             String result = convertTimestampString(dateObj.getValue().toString());
-            return processNumericFields(result, dateObj.getCondition(), fieldName);
+            return processNumericFields(result, dateObj.getCondition(), dateObj.getApplyCondition(), fieldName);
             
         }
         else{

@@ -237,9 +237,9 @@ public class STIXReportModule implements GeneralReportModule{
                             try{
                                 ObservableResult result = evaluateObservableComposition(ind.getObservable().getObservableComposition(), "  ");
                                 
-                                if(result.isTrue()){
+                                //if(result.isTrue()){
                                     printResults(ind, result.getDescription());
-                                }
+                                //}
                             }
                             catch (TskCoreException ex){
                                 System.out.println("Exception: " + ex.getLocalizedMessage());

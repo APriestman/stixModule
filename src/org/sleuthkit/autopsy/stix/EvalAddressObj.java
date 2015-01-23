@@ -66,7 +66,7 @@ public class EvalAddressObj extends EvaluatableObject {
 
         // Set warnings for any unsupported fields
         setUnsupportedFieldWarnings();
-        
+
         Case case1 = Case.getCurrentCase();
         SleuthkitCase sleuthkitCase = case1.getSleuthkitCase();
 
@@ -77,23 +77,21 @@ public class EvalAddressObj extends EvaluatableObject {
             List<BlackboardArtifact> combinedArts = new ArrayList<BlackboardArtifact>();
             String searchString = "";
             String[] parts = origAddressStr.split("##comma##");
-            
-            for(String addressStr:parts){
-                
+
+            for (String addressStr : parts) {
+
                 // Update the string to show in the results
-                if(! searchString.isEmpty()){
-                    
-                    if((obj.getAddressValue().getApplyCondition() != null) &&
-                           (obj.getAddressValue().getApplyCondition() == ConditionApplicationEnum.ALL)){
+                if (!searchString.isEmpty()) {
+
+                    if ((obj.getAddressValue().getApplyCondition() != null)
+                            && (obj.getAddressValue().getApplyCondition() == ConditionApplicationEnum.ALL)) {
                         searchString += " AND ";
-                    }
-                    else{
+                    } else {
                         searchString += " OR ";
                     }
                 }
                 searchString += addressStr;
-                
-                
+
                 if ((obj.getAddressValue().getCondition() == null)
                         || (obj.getAddressValue().getCondition() == ConditionTypeEnum.EQUALS)) {
                     List<BlackboardArtifact> arts = sleuthkitCase.getBlackboardArtifacts(
@@ -101,10 +99,9 @@ public class EvalAddressObj extends EvaluatableObject {
                             BlackboardAttribute.ATTRIBUTE_TYPE.TSK_KEYWORD,
                             addressStr);
 
-                    if(arts.isEmpty()){
+                    if (arts.isEmpty()) {
                         everyPartMatched = false;
-                    }
-                    else{
+                    } else {
                         combinedArts.addAll(arts);
                     }
 
@@ -129,35 +126,34 @@ public class EvalAddressObj extends EvaluatableObject {
                         }
                     }
 
-                    if(finalHits.isEmpty()){
+                    if (finalHits.isEmpty()) {
                         everyPartMatched = false;
-                    }
-                    else{
+                    } else {
                         combinedArts.addAll(finalHits);
                     }
                 }
             }
-            
-            // If we're in the ALL case, make sure every piece matched
-            if((obj.getAddressValue().getApplyCondition() != null) &&
-                (obj.getAddressValue().getApplyCondition() == ConditionApplicationEnum.ALL) &&
-                (! everyPartMatched)){
-                return new ObservableResult(id, "AddressObject: No matches for " + searchString,
-                                spacing, ObservableResult.ObservableState.FALSE, null);
-            }
-            
-            if (!combinedArts.isEmpty()) {
-                        List<StixArtifactData> artData = new ArrayList<StixArtifactData>();
-                        for (BlackboardArtifact a : combinedArts) {
-                            artData.add(new StixArtifactData(a.getObjectID(), id, "AddressObject"));
-                        }
-                        return new ObservableResult(id, "AddressObject: Found a match for " + searchString,
-                                spacing, ObservableResult.ObservableState.TRUE, artData);
-                    }
 
-                    return new ObservableResult(id, "AddressObject: Found no matches for " + searchString,
-                            spacing, ObservableResult.ObservableState.FALSE, null);
-            
+            // If we're in the ALL case, make sure every piece matched
+            if ((obj.getAddressValue().getApplyCondition() != null)
+                    && (obj.getAddressValue().getApplyCondition() == ConditionApplicationEnum.ALL)
+                    && (!everyPartMatched)) {
+                return new ObservableResult(id, "AddressObject: No matches for " + searchString,
+                        spacing, ObservableResult.ObservableState.FALSE, null);
+            }
+
+            if (!combinedArts.isEmpty()) {
+                List<StixArtifactData> artData = new ArrayList<StixArtifactData>();
+                for (BlackboardArtifact a : combinedArts) {
+                    artData.add(new StixArtifactData(a.getObjectID(), id, "AddressObject"));
+                }
+                return new ObservableResult(id, "AddressObject: Found a match for " + searchString,
+                        spacing, ObservableResult.ObservableState.TRUE, artData);
+            }
+
+            return new ObservableResult(id, "AddressObject: Found no matches for " + searchString,
+                    spacing, ObservableResult.ObservableState.FALSE, null);
+
         } catch (TskCoreException ex) {
             return new ObservableResult(id, "AddressObject: Exception during evaluation: " + ex.getLocalizedMessage(),
                     spacing, ObservableResult.ObservableState.INDETERMINATE, null);
@@ -167,24 +163,24 @@ public class EvalAddressObj extends EvaluatableObject {
     /**
      * Set up the warning for any fields in the object that aren't supported.
      */
-    private void setUnsupportedFieldWarnings(){
+    private void setUnsupportedFieldWarnings() {
         List<String> fieldNames = new ArrayList<String>();
-        
-        if(obj.getVLANName() != null){
+
+        if (obj.getVLANName() != null) {
             fieldNames.add("VLAN_Name");
         }
-        if(obj.getVLANName() != null){
+        if (obj.getVLANName() != null) {
             fieldNames.add("VLAN_Num");
         }
-        
+
         String warningStr = "";
-        for(String name:fieldNames){
-            if(! warningStr.isEmpty()){
+        for (String name : fieldNames) {
+            if (!warningStr.isEmpty()) {
                 warningStr += ", ";
             }
             warningStr += name;
         }
-        
+
         addWarning("Unsupported field(s): " + warningStr);
     }
 }

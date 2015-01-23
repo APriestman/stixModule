@@ -54,7 +54,7 @@ public class EvalURIObj extends EvaluatableObject {
                     spacing, ObservableResult.ObservableState.INDETERMINATE, null);
         }
         String addressStr = obj.getValue().getValue().toString();
-        
+
         // Strip off http:// or https://
         String modifiedAddressStr = addressStr.toLowerCase();
         modifiedAddressStr = modifiedAddressStr.replaceAll("http(s)?://", "");
@@ -71,73 +71,73 @@ public class EvalURIObj extends EvaluatableObject {
 
         try {
             /*
-            if ((obj.getValue().getCondition() == null)
-                    || (obj.getValue().getCondition() == ConditionTypeEnum.EQUALS)) {
+             if ((obj.getValue().getCondition() == null)
+             || (obj.getValue().getCondition() == ConditionTypeEnum.EQUALS)) {
 
-                // Old version - uses a database query but only works on full strings.
-                // It will be faster to use this in the "equals" case
-                String[] parts = addressStr.split("##comma##");
-                List<BlackboardArtifact> arts = new ArrayList<BlackboardArtifact>();
-                for (String part : parts) {
-                    arts.addAll(sleuthkitCase.getBlackboardArtifacts(
-                            BlackboardArtifact.ARTIFACT_TYPE.TSK_KEYWORD_HIT,
-                            BlackboardAttribute.ATTRIBUTE_TYPE.TSK_KEYWORD,
-                            part));
-                }
+             // Old version - uses a database query but only works on full strings.
+             // It will be faster to use this in the "equals" case
+             String[] parts = addressStr.split("##comma##");
+             List<BlackboardArtifact> arts = new ArrayList<BlackboardArtifact>();
+             for (String part : parts) {
+             arts.addAll(sleuthkitCase.getBlackboardArtifacts(
+             BlackboardArtifact.ARTIFACT_TYPE.TSK_KEYWORD_HIT,
+             BlackboardAttribute.ATTRIBUTE_TYPE.TSK_KEYWORD,
+             part));
+             }
 
-                if (!arts.isEmpty()) {
+             if (!arts.isEmpty()) {
 
-                    List<StixArtifactData> artData = new ArrayList<StixArtifactData>();
-                    for (BlackboardArtifact a : arts) {
-                        artData.add(new StixArtifactData(a.getObjectID(), id, "URIObject"));
-                    }
+             List<StixArtifactData> artData = new ArrayList<StixArtifactData>();
+             for (BlackboardArtifact a : arts) {
+             artData.add(new StixArtifactData(a.getObjectID(), id, "URIObject"));
+             }
 
-                    return new ObservableResult(id, "URIObject: Found " + arts.size() + " matches for address = \"" + addressStr + "\"",
-                            spacing, ObservableResult.ObservableState.TRUE, artData);
+             return new ObservableResult(id, "URIObject: Found " + arts.size() + " matches for address = \"" + addressStr + "\"",
+             spacing, ObservableResult.ObservableState.TRUE, artData);
 
-                } else {
-                    return new ObservableResult(id, "URIObject: Found no matches for address = \"" + addressStr + "\"",
-                            spacing, ObservableResult.ObservableState.FALSE, null);
-                }
-            } else {*/
+             } else {
+             return new ObservableResult(id, "URIObject: Found no matches for address = \"" + addressStr + "\"",
+             spacing, ObservableResult.ObservableState.FALSE, null);
+             }
+             } else {*/
 
-                // This is inefficient, but the easiest way to do it.
-                List<BlackboardArtifact> finalHits = new ArrayList<BlackboardArtifact>();
+            // This is inefficient, but the easiest way to do it.
+            List<BlackboardArtifact> finalHits = new ArrayList<BlackboardArtifact>();
 
-                // Get all the URL artifacts
-                List<BlackboardArtifact> artList
-                        = sleuthkitCase.getBlackboardArtifacts(BlackboardArtifact.ARTIFACT_TYPE.TSK_KEYWORD_HIT);
+            // Get all the URL artifacts
+            List<BlackboardArtifact> artList
+                    = sleuthkitCase.getBlackboardArtifacts(BlackboardArtifact.ARTIFACT_TYPE.TSK_KEYWORD_HIT);
 
-                for (BlackboardArtifact art : artList) {
+            for (BlackboardArtifact art : artList) {
 
-                    for (BlackboardAttribute attr : art.getAttributes()) {
-                        if (attr.getAttributeTypeID() == BlackboardAttribute.ATTRIBUTE_TYPE.TSK_KEYWORD.getTypeID()) {
-                            
-                            String modifiedAttrString = attr.getValueString();
-                            if(modifiedAttrString != null){
-                                modifiedAttrString = modifiedAttrString.toLowerCase();
-                                modifiedAttrString = modifiedAttrString.replaceAll("http(s)?://", "");
-                            }
-                            
-                            if (compareStringObject(modifiedAddressStr, obj.getValue().getCondition(),
-                                    obj.getValue().getApplyCondition(), modifiedAttrString)) {
-                                finalHits.add(art);
-                            }
+                for (BlackboardAttribute attr : art.getAttributes()) {
+                    if (attr.getAttributeTypeID() == BlackboardAttribute.ATTRIBUTE_TYPE.TSK_KEYWORD.getTypeID()) {
+
+                        String modifiedAttrString = attr.getValueString();
+                        if (modifiedAttrString != null) {
+                            modifiedAttrString = modifiedAttrString.toLowerCase();
+                            modifiedAttrString = modifiedAttrString.replaceAll("http(s)?://", "");
+                        }
+
+                        if (compareStringObject(modifiedAddressStr, obj.getValue().getCondition(),
+                                obj.getValue().getApplyCondition(), modifiedAttrString)) {
+                            finalHits.add(art);
                         }
                     }
                 }
+            }
 
-                if (!finalHits.isEmpty()) {
-                    List<StixArtifactData> artData = new ArrayList<StixArtifactData>();
-                    for (BlackboardArtifact a : finalHits) {
-                        artData.add(new StixArtifactData(a.getObjectID(), id, "UriObject"));
-                    }
-                    return new ObservableResult(id, "UriObject: Found a match for " + addressStr,
-                            spacing, ObservableResult.ObservableState.TRUE, artData);
+            if (!finalHits.isEmpty()) {
+                List<StixArtifactData> artData = new ArrayList<StixArtifactData>();
+                for (BlackboardArtifact a : finalHits) {
+                    artData.add(new StixArtifactData(a.getObjectID(), id, "UriObject"));
                 }
+                return new ObservableResult(id, "UriObject: Found a match for " + addressStr,
+                        spacing, ObservableResult.ObservableState.TRUE, artData);
+            }
 
-                return new ObservableResult(id, "URIObject: Found no matches for " + addressStr,
-                        spacing, ObservableResult.ObservableState.FALSE, null);
+            return new ObservableResult(id, "URIObject: Found no matches for " + addressStr,
+                    spacing, ObservableResult.ObservableState.FALSE, null);
             /*}*/
 
         } catch (TskCoreException ex) {

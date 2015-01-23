@@ -79,8 +79,7 @@ public class EvalURLHistoryObj extends EvaluatableObject {
                 boolean haveReferrer = false;
                 boolean havePageTitle = false;
                 boolean haveUserProfile = false;
-                
-                
+
                 setUnsupportedEntryFieldWarnings(entry);
 
                 // At present, the search string doesn't get reported (because there could be different ones
@@ -126,8 +125,8 @@ public class EvalURLHistoryObj extends EvaluatableObject {
                     }
                     searchString += "Hostname \"" + entry.getHostname().getHostnameValue().getValue() + "\"";
                 }
-                
-                if(! finalResultsStr.isEmpty()){
+
+                if (!finalResultsStr.isEmpty()) {
                     finalResultsStr += ", ";
                 }
                 finalResultsStr += searchString;
@@ -143,7 +142,7 @@ public class EvalURLHistoryObj extends EvaluatableObject {
                     SleuthkitCase sleuthkitCase = case1.getSleuthkitCase();
                     List<BlackboardArtifact> artList
                             = sleuthkitCase.getBlackboardArtifacts(BlackboardArtifact.ARTIFACT_TYPE.TSK_WEB_HISTORY);
-                    
+
                     for (BlackboardArtifact art : artList) {
                         boolean foundURLMatch = false;
                         boolean foundHostnameMatch = false;
@@ -229,7 +228,7 @@ public class EvalURLHistoryObj extends EvaluatableObject {
                     spacing, ObservableResult.ObservableState.FALSE, null);
 
         } else if (haveBrowserName) {
-            
+
             // It doesn't seem too useful, but we can just search for the browser name
             // if there aren't any URL entries
             try {
@@ -278,43 +277,44 @@ public class EvalURLHistoryObj extends EvaluatableObject {
         }
 
     }
-    
+
     /**
-     * Set up the warning for any fields in the URL_History_Entry object that aren't supported.
+     * Set up the warning for any fields in the URL_History_Entry object that
+     * aren't supported.
      */
-    private void setUnsupportedEntryFieldWarnings(URLHistoryEntryType entry){
+    private void setUnsupportedEntryFieldWarnings(URLHistoryEntryType entry) {
         List<String> fieldNames = new ArrayList<String>();
-        
-        if(entry.getUserProfileName() != null){
+
+        if (entry.getUserProfileName() != null) {
             fieldNames.add("User_Profile_Name");
         }
-        if(entry.getVisitCount() != null){
+        if (entry.getVisitCount() != null) {
             fieldNames.add("Visit_Count");
         }
-        if(entry.getManuallyEnteredCount() != null){
+        if (entry.getManuallyEnteredCount() != null) {
             fieldNames.add("Manually_Entered_Count");
         }
-        if(entry.getModificationDateTime() != null){
+        if (entry.getModificationDateTime() != null) {
             fieldNames.add("Modification_DateTime");
         }
-        if(entry.getExpirationDateTime() != null){
+        if (entry.getExpirationDateTime() != null) {
             fieldNames.add("Expiration_DateTime");
         }
-        if(entry.getFirstVisitDateTime() != null){
+        if (entry.getFirstVisitDateTime() != null) {
             fieldNames.add("First_Visit_DateTime");
         }
-        if(entry.getLastVisitDateTime() != null){
+        if (entry.getLastVisitDateTime() != null) {
             fieldNames.add("Last_Visit_DateTime");
         }
-        
+
         String warningStr = "";
-        for(String name:fieldNames){
-            if(! warningStr.isEmpty()){
+        for (String name : fieldNames) {
+            if (!warningStr.isEmpty()) {
                 warningStr += ", ";
             }
             warningStr += name;
         }
-        
+
         addWarning("Unsupported URL_History_Entry field(s): " + warningStr);
     }
 }

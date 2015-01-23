@@ -16,7 +16,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.sleuthkit.autopsy.stix;
 
 import java.io.File;
@@ -30,43 +29,41 @@ public class STIXReportModuleConfigPanel extends javax.swing.JPanel {
 
     String stixFile = null;
     boolean showAllResults;
-    
+
     /**
      * Creates new form STIXReportModuleConfigPanel
      */
     public STIXReportModuleConfigPanel() {
         initComponents();
-        
+
         // Set the default path to the last one used
-        if((ModuleSettings.getConfigSetting("STIX", "defaultPath") != null) &&
-            (! ModuleSettings.getConfigSetting("STIX", "defaultPath").isEmpty())){
+        if ((ModuleSettings.getConfigSetting("STIX", "defaultPath") != null)
+                && (!ModuleSettings.getConfigSetting("STIX", "defaultPath").isEmpty())) {
             jTextField1.setText(ModuleSettings.getConfigSetting("STIX", "defaultPath"));
             stixFile = ModuleSettings.getConfigSetting("STIX", "defaultPath");
         }
-        
+
         // Set the results checkbox to the last one used
-        if((ModuleSettings.getConfigSetting("STIX", "showAllResults") != null) &&
-            (! ModuleSettings.getConfigSetting("STIX", "showAllResults").isEmpty())){
-            
-            if(ModuleSettings.getConfigSetting("STIX", "showAllResults").equals("true")){
+        if ((ModuleSettings.getConfigSetting("STIX", "showAllResults") != null)
+                && (!ModuleSettings.getConfigSetting("STIX", "showAllResults").isEmpty())) {
+
+            if (ModuleSettings.getConfigSetting("STIX", "showAllResults").equals("true")) {
                 jCheckBox1.setSelected(true);
                 showAllResults = true;
-            }
-            else{
+            } else {
                 jCheckBox1.setSelected(false);
                 showAllResults = false;
             }
-        }
-        else{
+        } else {
             showAllResults = false;
         }
     }
-    
-    public String getStixFile(){
+
+    public String getStixFile() {
         return stixFile;
     }
-    
-    public boolean getShowAllResults(){
+
+    public boolean getShowAllResults() {
         return showAllResults;
     }
 
@@ -146,32 +143,30 @@ public class STIXReportModuleConfigPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
-        
+
     }//GEN-LAST:event_jTextField1ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        
+
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-        
+
         File currentSelection = new File(jTextField1.getText());
-        if(currentSelection.exists()){
+        if (currentSelection.exists()) {
             fileChooser.setCurrentDirectory(currentSelection);
         }
-        
-        int result = fileChooser.showOpenDialog(null);
-        
 
-        if (result == JFileChooser.APPROVE_OPTION)
-        {
+        int result = fileChooser.showOpenDialog(null);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
             stixFile = fileChooser.getSelectedFile().getAbsolutePath();
             jTextField1.setText(stixFile);
         }
-        
+
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
-        
+
     }//GEN-LAST:event_jTextField1KeyTyped
 
     private void jTextField1KeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyReleased
@@ -181,15 +176,13 @@ public class STIXReportModuleConfigPanel extends javax.swing.JPanel {
     private void jCheckBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox1ActionPerformed
         // TODO add your handling code here:
         showAllResults = jCheckBox1.isSelected();
-        if(showAllResults){
+        if (showAllResults) {
             ModuleSettings.setConfigSetting("STIX", "showAllResults", "true");
-        }
-        else{
+        } else {
             ModuleSettings.setConfigSetting("STIX", "showAllResults", "false");
         }
     }//GEN-LAST:event_jCheckBox1ActionPerformed
 
-    
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;

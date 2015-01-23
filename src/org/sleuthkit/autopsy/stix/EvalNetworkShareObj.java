@@ -57,13 +57,13 @@ public class EvalNetworkShareObj extends EvaluatableObject {
         String searchString = "";
         if (obj.getNetname() != null) {
             searchString += "Netname \"" + obj.getNetname().getValue() + "\"";
-            
+
             // The apply conditions ALL or NONE probably won't work correctly. Neither seems
             // all that likely to come up in practice, so just give a warning.
-            if((obj.getNetname().getApplyCondition() != null) &&
-                    (obj.getNetname().getApplyCondition() != ConditionApplicationEnum.ANY)){
-                addWarning("Apply condition " + obj.getNetname().getApplyCondition().value() + 
-                        " may not work correctly");
+            if ((obj.getNetname().getApplyCondition() != null)
+                    && (obj.getNetname().getApplyCondition() != ConditionApplicationEnum.ANY)) {
+                addWarning("Apply condition " + obj.getNetname().getApplyCondition().value()
+                        + " may not work correctly");
             }
         }
         if (obj.getLocalPath() != null) {
@@ -71,16 +71,16 @@ public class EvalNetworkShareObj extends EvaluatableObject {
                 searchString += " and ";
             }
             searchString += "LocalPath \"" + obj.getLocalPath().getValue() + "\"";
-            
+
             // Same as above - the apply conditions ALL or NONE probably won't work correctly. Neither seems
             // all that likely to come up in practice, so just give a warning.
-            if((obj.getLocalPath().getApplyCondition() != null) &&
-                    (obj.getLocalPath().getApplyCondition() != ConditionApplicationEnum.ANY)){
-                addWarning("Apply condition " + obj.getLocalPath().getApplyCondition().value() + 
-                        " may not work correctly");
+            if ((obj.getLocalPath().getApplyCondition() != null)
+                    && (obj.getLocalPath().getApplyCondition() != ConditionApplicationEnum.ANY)) {
+                addWarning("Apply condition " + obj.getLocalPath().getApplyCondition().value()
+                        + " may not work correctly");
             }
         }
-        
+
         setUnsupportedFieldWarnings();
 
         // The assumption here is that there aren't going to be too many network shares, so we
@@ -133,28 +133,28 @@ public class EvalNetworkShareObj extends EvaluatableObject {
                     spacing, ObservableResult.ObservableState.INDETERMINATE, null);
         }
     }
-    
-    private void setUnsupportedFieldWarnings(){
+
+    private void setUnsupportedFieldWarnings() {
         List<String> fieldNames = new ArrayList<String>();
-        
-        if(obj.getCurrentUses() != null){
+
+        if (obj.getCurrentUses() != null) {
             fieldNames.add("Current_Uses");
         }
-        if(obj.getMaxUses() != null){
+        if (obj.getMaxUses() != null) {
             fieldNames.add("Max_Uses");
         }
-        if(obj.getType() != null){
+        if (obj.getType() != null) {
             fieldNames.add("Type");
         }
-        
+
         String warningStr = "";
-        for(String name:fieldNames){
-            if(! warningStr.isEmpty()){
+        for (String name : fieldNames) {
+            if (!warningStr.isEmpty()) {
                 warningStr += ", ";
             }
             warningStr += name;
         }
-        
+
         addWarning("Unsupported field(s): " + warningStr);
     }
 

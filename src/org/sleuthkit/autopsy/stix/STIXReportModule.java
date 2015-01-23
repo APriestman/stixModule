@@ -72,7 +72,7 @@ public class STIXReportModule implements GeneralReportModule {
 
     private final Map<String, ObjectType> idToObjectMap = new HashMap<String, ObjectType>();
     private final Map<String, ObservableResult> idToResult = new HashMap<String, ObservableResult>();
-    
+
     private List<EvalRegistryObj.RegistryFileInfo> registryFileData = null;
 
     private final boolean skipShortCircuit = true;
@@ -107,7 +107,7 @@ public class STIXReportModule implements GeneralReportModule {
 
         // Check if the user wants to display all output or just hits
         reportAllResults = configPanel.getShowAllResults();
-        
+
         // Set up the output file
         try {
             File file = new File(reportPath);
@@ -124,12 +124,12 @@ public class STIXReportModule implements GeneralReportModule {
 
         // Keep track of whether any errors occur during processing
         boolean hadErrors = false;
-        
+
         // Process the file/directory name entry
         String stixFileName = configPanel.getStixFile();
         File stixFile = new File(stixFileName);
-        
-        if(! stixFile.exists()){
+
+        if (!stixFile.exists()) {
             logger.log(Level.SEVERE, String.format("Unable to open STIX file/directory %s", stixFileName));
             MessageNotifyUtil.Notify.show("STIXReportModule",
                     "Unable to open STIX file/directory " + stixFileName,
@@ -138,29 +138,27 @@ public class STIXReportModule implements GeneralReportModule {
             progressPanel.updateStatusLabel("Could not open file/directory " + stixFileName);
             return;
         }
-        
+
         // Store the path
         ModuleSettings.setConfigSetting("STIX", "defaultPath", stixFileName);
-        
+
         // Create array of stix file(s)
         File[] stixFiles;
-        if(stixFile.isFile()){
+        if (stixFile.isFile()) {
             stixFiles = new File[1];
             stixFiles[0] = stixFile;
-        }
-        else{
+        } else {
             stixFiles = stixFile.listFiles();
         }
-        
+
         // Set the length of the progress bar - we increment twice for each file
         progressPanel.setMaximumProgress(stixFiles.length * 2 + 1);
-        
+
         // Process each STIX file
-        for(File file:stixFiles){
-            try{
+        for (File file : stixFiles) {
+            try {
                 processFile(file.getAbsolutePath(), progressPanel);
-            }
-            catch(TskCoreException ex){
+            } catch (TskCoreException ex) {
                 logger.log(Level.SEVERE, String.format("Unable to process STIX file %s", file), ex);
                 MessageNotifyUtil.Notify.show("STIXReportModule",
                         ex.getLocalizedMessage(),
@@ -177,42 +175,42 @@ public class STIXReportModule implements GeneralReportModule {
                 logger.log(Level.SEVERE, String.format("Error closing STIX report file %s", reportPath), ex);
             }
         }
-        
+
         // Set the progress bar to done. If any errors occurred along the way, modify
         // the "complete" message to indicate this.
         progressPanel.complete();
-        if(hadErrors){
+        if (hadErrors) {
             progressPanel.updateStatusLabel("Completed with errors");
         }
     }
-    
+
     /**
      * Process a STIX file.
-     * 
+     *
      * @param stixFile - Name of the file
      * @param progressPanel - Progress panel (for updating)
-     * @throws TskCoreException 
+     * @throws TskCoreException
      */
     private void processFile(String stixFile, ReportProgressPanel progressPanel) throws
-            TskCoreException{
-     
+            TskCoreException {
+
         // Load the STIX file
         STIXPackage stix;
         stix = loadSTIXFile(stixFile);
- 
+
         printFileHeader(stixFile);
 
         // Save any observables listed up front
         processObservables(stix);
         progressPanel.increment();
-        
+
         // Make copies of the registry files
         registryFileData = EvalRegistryObj.copyRegistryFiles();
 
         // Process the indicators
         processIndicators(stix);
         progressPanel.increment();
-        
+
     }
 
     /**
@@ -238,8 +236,8 @@ public class STIXReportModule implements GeneralReportModule {
     }
 
     /**
-     * Do the initial processing of the list of observables. 
-     * For each observable, save it in a map using the ID as key.
+     * Do the initial processing of the list of observables. For each
+     * observable, save it in a map using the ID as key.
      *
      * @param stix STIXPackage
      */
@@ -255,11 +253,12 @@ public class STIXReportModule implements GeneralReportModule {
     }
 
     /**
-     * Process all STIX indicators and save results to output file and create artifacts.
-     * 
+     * Process all STIX indicators and save results to output file and create
+     * artifacts.
+     *
      * @param stix STIXPackage
      */
-    private void processIndicators(STIXPackage stix) throws TskCoreException{
+    private void processIndicators(STIXPackage stix) throws TskCoreException {
         if (stix.getIndicators() != null) {
             List<IndicatorBaseType> s = stix.getIndicators().getIndicators();
             for (IndicatorBaseType t : s) {
@@ -268,19 +267,19 @@ public class STIXReportModule implements GeneralReportModule {
                     if (ind.getObservable() != null) {
                         if (ind.getObservable().getObject() != null) {
                             ObservableResult result = evaluateSingleObservable(ind.getObservable(), "");
-                            if(result.isTrue() || reportAllResults){
+                            if (result.isTrue() || reportAllResults) {
                                 writeResultsToFile(ind, result.getDescription(), result.isTrue());
                             }
-                            if(result.isTrue()){
+                            if (result.isTrue()) {
                                 saveResultsAsArtifacts(ind, result);
                             }
                         } else if (ind.getObservable().getObservableComposition() != null) {
                             ObservableResult result = evaluateObservableComposition(ind.getObservable().getObservableComposition(), "  ");
 
-                            if(result.isTrue() || reportAllResults){
+                            if (result.isTrue() || reportAllResults) {
                                 writeResultsToFile(ind, result.getDescription(), result.isTrue());
                             }
-                            if(result.isTrue()){
+                            if (result.isTrue()) {
                                 saveResultsAsArtifacts(ind, result);
                             }
                         }
@@ -292,31 +291,29 @@ public class STIXReportModule implements GeneralReportModule {
 
     /**
      * Create the artifacts saved in the observable result.
-     * 
+     *
      * @param ind
      * @param result
-     * @throws TskCoreException 
+     * @throws TskCoreException
      */
     private void saveResultsAsArtifacts(Indicator ind, ObservableResult result) throws TskCoreException {
 
-        if(result.getArtifacts() == null){
+        if (result.getArtifacts() == null) {
             return;
         }
-        
+
         // Count of how many artifacts have been created for this indicator. 
         int count = 0;
-        
+
         for (StixArtifactData s : result.getArtifacts()) {
             // Figure out what name to use for this indicator. If it has a title, 
             // use that. Otherwise use the ID. If both are missing, use a
             // generic heading.
-            if(ind.getTitle() != null){
+            if (ind.getTitle() != null) {
                 s.createArtifact(ind.getTitle());
-            }
-            else if(ind.getId() != null){
+            } else if (ind.getId() != null) {
                 s.createArtifact(ind.getId().toString());
-            }
-            else{
+            } else {
                 s.createArtifact("Unnamed indicator(s)");
             }
 
@@ -335,7 +332,7 @@ public class STIXReportModule implements GeneralReportModule {
 
     /**
      * Write the full results string to the output file.
-     * 
+     *
      * @param ind - Used to get the title, ID, and description of the indicator
      * @param resultStr - Full results for this indicator
      * @param found - true if the indicator was found in datasource(s)
@@ -343,21 +340,20 @@ public class STIXReportModule implements GeneralReportModule {
     private void writeResultsToFile(Indicator ind, String resultStr, boolean found) {
         if (output != null) {
             try {
-                if(found){
+                if (found) {
                     output.write("----------------\r\n"
-                            +    "Found indicator:\r\n");
-                }
-                else{
+                            + "Found indicator:\r\n");
+                } else {
                     output.write("-----------------------\r\n"
-                               + "Did not find indicator:\r\n");
+                            + "Did not find indicator:\r\n");
                 }
                 if (ind.getTitle() != null) {
                     output.write("Title: " + ind.getTitle() + "\r\n");
                 } else {
                     output.write("\r\n");
                 }
-                if(ind.getId() != null){
-                        output.write("ID: " + ind.getId() + "\r\n");
+                if (ind.getId() != null) {
+                    output.write("ID: " + ind.getId() + "\r\n");
                 }
 
                 if (ind.getDescription() != null) {
@@ -371,14 +367,15 @@ public class STIXReportModule implements GeneralReportModule {
             }
         }
     }
-    
+
     /**
      * Write the a header for the current file to the output file.
-     * @param a_fileName 
+     *
+     * @param a_fileName
      */
-    private void printFileHeader(String a_fileName){
+    private void printFileHeader(String a_fileName) {
         if (output != null) {
-            try{
+            try {
                 char[] chars = new char[a_fileName.length() + 8];
                 Arrays.fill(chars, '#');
                 String header = new String(chars);
@@ -386,19 +383,19 @@ public class STIXReportModule implements GeneralReportModule {
                 output.write("\r\n");
                 output.write("### " + a_fileName + " ###\r\n");
                 output.write(header + "\r\n\r\n");
-            }
-            catch(IOException ex) {
+            } catch (IOException ex) {
                 logger.log(Level.SEVERE, String.format("Error writing to STIX report file %s", reportPath), ex);
             }
-        
+
         }
-        
+
     }
 
     /**
      * Use the ID or ID ref to create a key into the observable map.
+     *
      * @param obs
-     * @return 
+     * @return
      */
     private String makeMapKey(Observable obs) {
         QName idQ;
@@ -415,7 +412,8 @@ public class STIXReportModule implements GeneralReportModule {
 
     /**
      * Save an observable in the object map.
-     * @param obs 
+     *
+     * @param obs
      */
     private void saveToObjectMap(Observable obs) {
 
@@ -425,13 +423,12 @@ public class STIXReportModule implements GeneralReportModule {
     }
 
     /**
-     * Evaluate an observable composition.
-     * Can be called recursively. 
+     * Evaluate an observable composition. Can be called recursively.
      *
      * @param comp The observable composition object to evaluate
      * @param spacing Used to formatting the output
      * @return The status of the composition
-     * @throws TskCoreException 
+     * @throws TskCoreException
      */
     private ObservableResult evaluateObservableComposition(ObservableCompositionType comp, String spacing) throws TskCoreException {
         if (comp.getOperator() == null) {
@@ -474,15 +471,15 @@ public class STIXReportModule implements GeneralReportModule {
                     // indeterminate seems like a reasonable result
                     return new ObservableResult("", "", spacing, ObservableResult.ObservableState.INDETERMINATE, null);
                 }
-                
+
                 return result;
-                
+
             } else {
                 ObservableResult result = new ObservableResult(OperatorTypeEnum.OR, spacing);
                 for (Observable o : obsList) {
 
                     ObservableResult newResult;// The combined result for the composition
-                    
+
                     if (o.getObservableComposition() != null) {
                         newResult = evaluateObservableComposition(o.getObservableComposition(), spacing + "  ");
                         if (result == null) {
@@ -510,7 +507,7 @@ public class STIXReportModule implements GeneralReportModule {
                     // indeterminate seems like a reasonable result
                     return new ObservableResult("", "", spacing, ObservableResult.ObservableState.INDETERMINATE, null);
                 }
-                
+
                 return result;
             }
         } else {
@@ -519,13 +516,13 @@ public class STIXReportModule implements GeneralReportModule {
     }
 
     /**
-     * Evaluate one observable and return the result.
-     * This is at the end of the observable composition tree and will
-     * not be called recursively. 
+     * Evaluate one observable and return the result. This is at the end of the
+     * observable composition tree and will not be called recursively.
+     *
      * @param obs The observable object to evaluate
      * @param spacing For formatting the output
      * @return The status of the observable
-     * @throws TskCoreException 
+     * @throws TskCoreException
      */
     private ObservableResult evaluateSingleObservable(Observable obs, String spacing) throws TskCoreException {
 
@@ -535,7 +532,7 @@ public class STIXReportModule implements GeneralReportModule {
         }
 
         if (obs.getIdref() == null) {
-            
+
             // We should have the object data right here (as opposed to elsewhere in the STIX file). 
             // Save it to the map.
             if (obs.getId() != null) {
@@ -561,8 +558,8 @@ public class STIXReportModule implements GeneralReportModule {
 
     /**
      * Evaluate a STIX object.
-     * 
-     * 
+     *
+     *
      * @param obj The object to evaluate against the datasource(s)
      * @param spacing For formatting the output
      * @return
@@ -587,8 +584,8 @@ public class STIXReportModule implements GeneralReportModule {
             evalObj = new EvalSystemObj((SystemObjectType) obj.getProperties(), id, spacing);
         } else if (obj.getProperties() instanceof URLHistory) {
             evalObj = new EvalURLHistoryObj((URLHistory) obj.getProperties(), id, spacing);
-        } else if(obj.getProperties() instanceof WindowsRegistryKey){
-            evalObj = new EvalRegistryObj((WindowsRegistryKey)obj.getProperties(), id, spacing, registryFileData);
+        } else if (obj.getProperties() instanceof WindowsRegistryKey) {
+            evalObj = new EvalRegistryObj((WindowsRegistryKey) obj.getProperties(), id, spacing, registryFileData);
         } else {
             // Try to get the object type as a string
             String type = obj.getProperties().toString();

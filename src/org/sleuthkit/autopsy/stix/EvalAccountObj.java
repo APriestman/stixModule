@@ -95,7 +95,7 @@ public class EvalAccountObj extends EvaluatableObject {
             return new ObservableResult(id, "AccountObject: No evaluatable fields found",
                     spacing, ObservableResult.ObservableState.INDETERMINATE, null);
         }
-        
+
         // Set warnings for any unsupported fields
         setUnsupportedFieldWarnings();
 
@@ -156,54 +156,54 @@ public class EvalAccountObj extends EvaluatableObject {
         }
 
     }
-    
+
     /**
      * Set up the warning for any fields in the object that aren't supported.
      */
-    private void setUnsupportedFieldWarnings(){
+    private void setUnsupportedFieldWarnings() {
         List<String> fieldNames = new ArrayList<String>();
-        
-        if(obj.getDescription() != null){
+
+        if (obj.getDescription() != null) {
             fieldNames.add("Description");
         }
-        if(obj.getDomain() != null){
+        if (obj.getDomain() != null) {
             fieldNames.add("Domain");
         }
-        if(obj.getAuthentications() != null){
+        if (obj.getAuthentications() != null) {
             fieldNames.add("Authentication");
         }
-        if(obj.getCreationDate() != null){
+        if (obj.getCreationDate() != null) {
             fieldNames.add("Creation_Date");
         }
-        if(obj.getModifiedDate() != null){
+        if (obj.getModifiedDate() != null) {
             fieldNames.add("Modified_Date");
         }
-        if(obj.getLastAccessedTime() != null){
+        if (obj.getLastAccessedTime() != null) {
             fieldNames.add("Last_Accessed_Time");
         }
-        
-        if(obj instanceof UserAccountObjectType){
+
+        if (obj instanceof UserAccountObjectType) {
             UserAccountObjectType userAccountObj = (UserAccountObjectType) obj;
-            if(userAccountObj.getFullName() != null){
+            if (userAccountObj.getFullName() != null) {
                 fieldNames.add("Full_Name");
             }
-            if(userAccountObj.getGroupList() != null){
+            if (userAccountObj.getGroupList() != null) {
                 fieldNames.add("Group_List");
             }
-            if(userAccountObj.getLastLogin() != null){
+            if (userAccountObj.getLastLogin() != null) {
                 fieldNames.add("Last_Login");
             }
-            if(userAccountObj.getPrivilegeList() != null){
+            if (userAccountObj.getPrivilegeList() != null) {
                 fieldNames.add("Privilege_List");
             }
-            if(userAccountObj.getScriptPath() != null){
+            if (userAccountObj.getScriptPath() != null) {
                 fieldNames.add("Script_Path");
             }
-            if(userAccountObj.getUserPasswordAge() != null){
+            if (userAccountObj.getUserPasswordAge() != null) {
                 fieldNames.add("User_Password_Age");
             }
         }
-        
+
         if (obj instanceof WindowsUserAccount) {
             WindowsUserAccount winUserObj = (WindowsUserAccount) obj;
 
@@ -211,15 +211,15 @@ public class EvalAccountObj extends EvaluatableObject {
                 fieldNames.add("Security_Type");
             }
         }
-        
+
         String warningStr = "";
-        for(String name:fieldNames){
-            if(! warningStr.isEmpty()){
+        for (String name : fieldNames) {
+            if (!warningStr.isEmpty()) {
                 warningStr += ", ";
             }
             warningStr += name;
         }
-        
+
         addWarning("Unsupported field(s): " + warningStr);
     }
 

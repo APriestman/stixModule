@@ -42,16 +42,18 @@ public abstract class EvaluatableObject {
 
     /**
      * Set the warnings string to the given value.
-     * @param a_warnings 
+     *
+     * @param a_warnings
      */
     public void setWarnings(String a_warnings) {
         warnings = a_warnings;
     }
 
     /**
-     * Get the warnings string. This should not be used to print the final version
-     * of the warnings.
-     * @return 
+     * Get the warnings string. This should not be used to print the final
+     * version of the warnings.
+     *
+     * @return
      */
     public String getWarnings() {
         return warnings;
@@ -59,7 +61,8 @@ public abstract class EvaluatableObject {
 
     /**
      * Add to the warnings string.
-     * @param a_newWarning 
+     *
+     * @param a_newWarning
      */
     public void addWarning(String a_newWarning) {
         if ((warnings == null) || warnings.isEmpty()) {
@@ -70,14 +73,13 @@ public abstract class EvaluatableObject {
 
     /**
      * Find a list of artifacts with the given attribute type that contain the
-     * String Object.
-     * All comparisons will look for substrings of the Blackboard artifacts that
-     * match the String Object.
-     * 
+     * String Object. All comparisons will look for substrings of the Blackboard
+     * artifacts that match the String Object.
+     *
      * @param item
      * @param attrType
      * @return
-     * @throws TskCoreException 
+     * @throws TskCoreException
      */
     public List<BlackboardArtifact> findArtifactsBySubstring(StringObjectPropertyType item,
             BlackboardAttribute.ATTRIBUTE_TYPE attrType) throws TskCoreException {
@@ -147,10 +149,11 @@ public abstract class EvaluatableObject {
 
     /**
      * Compare a CybOX String Object with a given string.
+     *
      * @param stringObj The CybOX String Object
      * @param strField The string to compare against
      * @return true if strField is a match for the CybOX object
-     * @throws TskCoreException 
+     * @throws TskCoreException
      */
     public static boolean compareStringObject(StringObjectPropertyType stringObj, String strField)
             throws TskCoreException {
@@ -167,12 +170,13 @@ public abstract class EvaluatableObject {
 
     /**
      * Compare a string with CybOX conditions to a given string.
+     *
      * @param valueStr The CybOX string
      * @param condition EQUALS, CONTAINS, STARTS_WITH, etc
      * @param applyCondition ANY, ALL, NONE
      * @param strField The string to compare against
      * @return true if strField is a match for the CybOX valueStr and conditions
-     * @throws TskCoreException 
+     * @throws TskCoreException
      */
     public static boolean compareStringObject(String valueStr, ConditionTypeEnum condition,
             ConditionApplicationEnum applyCondition, String strField)
@@ -233,9 +237,10 @@ public abstract class EvaluatableObject {
     }
 
     /**
-     * Format the warnings that will be printed.
-     * Basically, just put parentheses around them if the string isn't empty.
-     * @return 
+     * Format the warnings that will be printed. Basically, just put parentheses
+     * around them if the string isn't empty.
+     *
+     * @return
      */
     public String getPrintableWarnings() {
         String warningsToPrint = "";

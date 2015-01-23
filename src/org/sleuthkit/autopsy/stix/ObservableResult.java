@@ -68,18 +68,24 @@ public class ObservableResult {
     }
 
     /**
-     * Returns true if the ObservableResult is currently true.
-     * Note: A false result here does not mean the state is false; it could also be indeterminate.
-     * @return true if the ObservableResult is true, false if it is false or indeterminate
+     * Returns true if the ObservableResult is currently true. Note: A false
+     * result here does not mean the state is false; it could also be
+     * indeterminate.
+     *
+     * @return true if the ObservableResult is true, false if it is false or
+     * indeterminate
      */
     public boolean isTrue() {
         return (state == ObservableState.TRUE);
     }
 
     /**
-     * Returns true if the ObservableResult is currently false.
-     * Note: A false result here does not mean the state is true; it could also be indeterminate.
-     * @return true if the ObservableResult is false, false if it is true or indeterminate
+     * Returns true if the ObservableResult is currently false. Note: A false
+     * result here does not mean the state is true; it could also be
+     * indeterminate.
+     *
+     * @return true if the ObservableResult is false, false if it is true or
+     * indeterminate
      */
     public boolean isFalse() {
         return (state == ObservableState.FALSE);
@@ -95,7 +101,7 @@ public class ObservableResult {
 
     /**
      * Add a new result to the current state
-     * 
+     *
      * @param a_result The new result to add
      * @param a_operator AND or OR
      */
@@ -131,7 +137,7 @@ public class ObservableResult {
                     // Previous state false + new state true => stay false
                 } else if (state == ObservableState.TRUE) {
                     // Previous state true + new state true => stay true and add artifacts
-                    if((artifacts == null) && (a_artifacts != null)){
+                    if ((artifacts == null) && (a_artifacts != null)) {
                         artifacts = new ArrayList<StixArtifactData>();
                     }
                     if (a_artifacts != null) {
@@ -140,7 +146,7 @@ public class ObservableResult {
                 } else {
                     // If the previous state was indeterminate, change it to true and add artifacts
                     state = ObservableState.TRUE;
-                    if((artifacts == null) && (a_artifacts != null)){
+                    if ((artifacts == null) && (a_artifacts != null)) {
                         artifacts = new ArrayList<StixArtifactData>();
                     }
                     if (a_artifacts != null) {
@@ -153,7 +159,7 @@ public class ObservableResult {
                 // If we now have a true, the whole thing is true regardless of previous state.
                 // Add the new artifacts.
                 state = ObservableState.TRUE;
-                if((artifacts == null) && (a_artifacts != null)){
+                if ((artifacts == null) && (a_artifacts != null)) {
                     artifacts = new ArrayList<StixArtifactData>();
                 }
                 if (a_artifacts != null) {
@@ -177,8 +183,9 @@ public class ObservableResult {
     }
 
     /**
-     * Add to the description string.
-     * Mostly just to make things cleaner by not testing for null all over the place.
+     * Add to the description string. Mostly just to make things cleaner by not
+     * testing for null all over the place.
+     *
      * @param a_desc New part of the description to add
      */
     private void addToDesc(String a_desc) {

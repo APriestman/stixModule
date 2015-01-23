@@ -141,7 +141,7 @@ public class EvalSystemObj extends EvaluatableObject {
         }
 
         setUnsupportedFieldWarnings();
-        
+
         try {
             Case case1 = Case.getCurrentCase();
             SleuthkitCase sleuthkitCase = case1.getSleuthkitCase();
@@ -229,81 +229,81 @@ public class EvalSystemObj extends EvaluatableObject {
                     spacing, ObservableResult.ObservableState.INDETERMINATE, null);
         }
     }
-    
+
     /**
      * Set up the warning for any fields in the object that aren't supported.
      */
-    private void setUnsupportedFieldWarnings(){
+    private void setUnsupportedFieldWarnings() {
         List<String> fieldNames = new ArrayList<String>();
-        
-        if(obj.getAvailablePhysicalMemory() != null){
+
+        if (obj.getAvailablePhysicalMemory() != null) {
             fieldNames.add("Available_Physical_Memory");
         }
-        if(obj.getBIOSInfo() != null){
+        if (obj.getBIOSInfo() != null) {
             fieldNames.add("BIOS_Info");
         }
-        if(obj.getDate() != null){
+        if (obj.getDate() != null) {
             fieldNames.add("Date");
         }
-        if(obj.getLocalTime() != null){
+        if (obj.getLocalTime() != null) {
             fieldNames.add("Local_Time");
         }
-        if(obj.getNetworkInterfaceList() != null){
+        if (obj.getNetworkInterfaceList() != null) {
             fieldNames.add("Network_Interface_List");
         }
-        if(obj.getOS() != null){
+        if (obj.getOS() != null) {
             fieldNames.add("OS");
         }
-        if(obj.getProcessorArchitecture() != null){
+        if (obj.getProcessorArchitecture() != null) {
             fieldNames.add("Processor_Architecture");
         }
-        if(obj.getSystemTime() != null){
+        if (obj.getSystemTime() != null) {
             fieldNames.add("System_Time");
         }
-        if(obj.getTimezoneDST() != null){
+        if (obj.getTimezoneDST() != null) {
             fieldNames.add("Timezone_DST");
         }
-        if(obj.getTimezoneStandard() != null){
+        if (obj.getTimezoneStandard() != null) {
             fieldNames.add("Timezone_Standard");
         }
-        if(obj.getTotalPhysicalMemory() != null){
+        if (obj.getTotalPhysicalMemory() != null) {
             fieldNames.add("Total_Physical_Memory");
         }
-        if(obj.getUptime() != null){
+        if (obj.getUptime() != null) {
             fieldNames.add("Uptime");
         }
-        if(obj.getUsername() != null){
+        if (obj.getUsername() != null) {
             fieldNames.add("Username");
         }
-        
+
         if (obj instanceof WindowsSystem) {
             WindowsSystem winSysObj = (WindowsSystem) obj;
-        
-            if(winSysObj.getDomains() != null){
+
+            if (winSysObj.getDomains() != null) {
                 fieldNames.add("Domain");
             }
-            if(winSysObj.getGlobalFlagList() != null){
+            if (winSysObj.getGlobalFlagList() != null) {
                 fieldNames.add("Global_Flag_List");
             }
-            if(winSysObj.getNetBIOSName() != null){
+            if (winSysObj.getNetBIOSName() != null) {
                 fieldNames.add("NetBIOS_Name");
             }
-            if(winSysObj.getOpenHandleList() != null){
+            if (winSysObj.getOpenHandleList() != null) {
                 fieldNames.add("Open_Handle_List");
             }
-            if(winSysObj.getWindowsDirectory() != null){
+            if (winSysObj.getWindowsDirectory() != null) {
                 fieldNames.add("Windows_Directory");
             }
         }
-        
+
         String warningStr = "";
-        for(String name:fieldNames){
-            if(! warningStr.isEmpty()){
+        for (String name : fieldNames) {
+            if (!warningStr.isEmpty()) {
                 warningStr += ", ";
             }
             warningStr += name;
         }
-        
+
         addWarning("Unsupported field(s): " + warningStr);
     }
 }

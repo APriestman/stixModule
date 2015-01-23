@@ -45,7 +45,6 @@ import org.mitre.cybox.common_2.UnsignedLongObjectPropertyType;
 /**
  *
  */
-
 public class EvalFileObj extends EvaluatableObject {
 
     private final FileObjectType obj;
@@ -96,45 +95,45 @@ public class EvalFileObj extends EvaluatableObject {
 
         if (obj.getFilePath() != null) {
             try {
-                
+
                 String[] parts = obj.getFilePath().getValue().toString().split("##comma##");
                 String finalPathStr = "";
-                
+
                 for (String filePath : parts) {
                     // First, we need to normalize the path
                     String currentFilePath = filePath;
-                
+
                     // Remove the drive letter
-                    if(currentFilePath.matches("^[A-Za-z]:.*")){
+                    if (currentFilePath.matches("^[A-Za-z]:.*")) {
                         currentFilePath = currentFilePath.substring(2);
                     }
-                
+
                     // Change any backslashes to forward slashes
                     currentFilePath = currentFilePath.replace("\\", "/");
-                    
+
                     // The path needs to start with a slash
-                    if(! currentFilePath.startsWith("/")){
+                    if (!currentFilePath.startsWith("/")) {
                         currentFilePath = "/" + currentFilePath;
                     }
-                
+
                     // If the path does not end in a slash, the final part should be the file name.
-                    if(! currentFilePath.endsWith("/")){
+                    if (!currentFilePath.endsWith("/")) {
                         int lastSlash = currentFilePath.lastIndexOf('/');
-                        if(lastSlash >= 0){
+                        if (lastSlash >= 0) {
                             currentFilePath = currentFilePath.substring(0, lastSlash + 1);
                         }
                     }
-                    
+
                     // Reconstruct the path string (which may be multi-part)
-                    if(!finalPathStr.isEmpty()){
+                    if (!finalPathStr.isEmpty()) {
                         finalPathStr += "##comma##";
                     }
                     finalPathStr += currentFilePath;
                 }
-                        
+
                 String newClause = processStringObject(finalPathStr, obj.getFilePath().getCondition(),
                         obj.getFilePath().getApplyCondition(), "parent_path");
-                
+
                 whereClause = addClause(whereClause, newClause);
             } catch (TskCoreException ex) {
                 addWarning(ex.getLocalizedMessage());
@@ -252,40 +251,38 @@ public class EvalFileObj extends EvaluatableObject {
                                 for (BlackboardArtifact artifact : arts) {
                                     for (BlackboardAttribute attr : artifact.getAttributes()) {
                                         if (attr.getAttributeTypeID() == BlackboardAttribute.ATTRIBUTE_TYPE.TSK_FILE_TYPE_SIG.getTypeID()) {
-                                            if(! formatsFound.isEmpty()){
+                                            if (!formatsFound.isEmpty()) {
                                                 formatsFound += ", ";
                                             }
                                             formatsFound += attr.getValueString();
                                             if (attr.getValueString().equalsIgnoreCase(obj.getFileFormat().getValue().toString())) {
                                                 foundMatch = true;
                                             }
-                                            
+
                                             // Try again looking for the last part of the Autopsy version as a substring
                                             // of the STIX version
                                             String type = attr.getValueString().replaceFirst("^.*/", "");
-                                            
+
                                             // This is reversed of how the comparison normally go
-                                            if(compareStringObject(type, ConditionTypeEnum.CONTAINS, null, obj.getFileFormat().getValue().toString())){
+                                            if (compareStringObject(type, ConditionTypeEnum.CONTAINS, null, obj.getFileFormat().getValue().toString())) {
                                                 foundMatch = true;
                                             }
                                         }
                                     }
                                 }
-                                
 
                                 // It looks like the STIX file formats can be different than what Autopsy stores
                                 // (mime vs. unix file), so don't kill a file based on this field not matching.
                                 //if (!foundMatch) {
                                 //    passedTests = false;
                                 //}
-                                if(formatsFound.isEmpty()){
-                                    addWarning("Warning: Did not match File_Format field " + obj.getFileFormat().getValue().toString() +
-                                               " (no file formats found)");
-                                }
-                                else{
-                                    if(! foundMatch){
-                                        addWarning("Warning: Did not match File_Format field " + obj.getFileFormat().getValue().toString() +
-                                               " against " + formatsFound);
+                                if (formatsFound.isEmpty()) {
+                                    addWarning("Warning: Did not match File_Format field " + obj.getFileFormat().getValue().toString()
+                                            + " (no file formats found)");
+                                } else {
+                                    if (!foundMatch) {
+                                        addWarning("Warning: Did not match File_Format field " + obj.getFileFormat().getValue().toString()
+                                                + " against " + formatsFound);
                                     }
                                 }
                             }
@@ -327,8 +324,9 @@ public class EvalFileObj extends EvaluatableObject {
     }
 
     /**
-     * Create a list of secondary fields.
-     * These are the ones that we only test on the matches for the primary fields.
+     * Create a list of secondary fields. These are the ones that we only test
+     * on the matches for the primary fields.
+     *
      * @return List of secondary fields
      */
     private String listSecondaryFields() {
@@ -347,6 +345,7 @@ public class EvalFileObj extends EvaluatableObject {
 
     /**
      * List unsupported fields found in the object.
+     *
      * @return List of unsupported fields
      */
     private String listUnsupportedFields() {
@@ -412,9 +411,10 @@ public class EvalFileObj extends EvaluatableObject {
 
     /**
      * Convert timestamp string into a long.
+     *
      * @param timeStr
      * @return
-     * @throws ParseException 
+     * @throws ParseException
      */
     private static long convertTimestamp(String timeStr) throws ParseException {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -427,12 +427,13 @@ public class EvalFileObj extends EvaluatableObject {
     }
 
     /**
-     * Return the SQL clause for an unsigned long object.
-     * Splits into fields and call the more generic version of the function.
+     * Return the SQL clause for an unsigned long object. Splits into fields and
+     * call the more generic version of the function.
+     *
      * @param longObj The Cybox UnsignedLong object
      * @param fieldName Name of the field to test against
      * @return SQL clause
-     * @throws TskCoreException 
+     * @throws TskCoreException
      */
     private static String processULongObject(UnsignedLongObjectPropertyType longObj, String fieldName)
             throws TskCoreException {
@@ -443,12 +444,13 @@ public class EvalFileObj extends EvaluatableObject {
 
     /**
      * Return the SQL clause for a numeric object.
+     *
      * @param valueStr Value (as string)
      * @param typeCondition Cybox condition
      * @param applyCondition Cybox apply_condition
      * @param fieldName Name of the field to test against
      * @return SQL clause
-     * @throws TskCoreException 
+     * @throws TskCoreException
      */
     private static String processNumericFields(String valueStr, ConditionTypeEnum typeCondition,
             ConditionApplicationEnum applyCondition, String fieldName)
@@ -534,34 +536,36 @@ public class EvalFileObj extends EvaluatableObject {
 
     /**
      * Return the SQL clause for a String object
+     *
      * @param stringObj The full Cybox String object
      * @param fieldName Name of the field we're testing against
      * @return SQL clause
-     * @throws TskCoreException 
+     * @throws TskCoreException
      */
     private static String processStringObject(StringObjectPropertyType stringObj, String fieldName)
             throws TskCoreException {
 
-        return processStringObject(stringObj.getValue().toString(), stringObj.getCondition(), 
+        return processStringObject(stringObj.getValue().toString(), stringObj.getCondition(),
                 stringObj.getApplyCondition(), fieldName);
     }
-        
+
     /**
      * Return the SQL clause for a String object
+     *
      * @param valueStr Value as a string
      * @param condition Cybox condition
      * @param applyCondition Cybox apply_condition
      * @param fieldName Name of the field we're testing against
      * @return SQL clause
-     * @throws TskCoreException 
+     * @throws TskCoreException
      */
     public static String processStringObject(String valueStr, ConditionTypeEnum condition,
-            ConditionApplicationEnum applyCondition, String fieldName)    
+            ConditionApplicationEnum applyCondition, String fieldName)
             throws TskCoreException {
-        
+
         String fullClause = "";
         String lowerFieldName = "lower(" + fieldName + ")";
-        
+
         if (valueStr.isEmpty()) {
             throw new TskCoreException("Empty value field");
         }
@@ -616,12 +620,13 @@ public class EvalFileObj extends EvaluatableObject {
     }
 
     /**
-     * Create the SQL clause for a timestamp object.
-     * Converts the time into a numeric field and then creates the clause from that.
+     * Create the SQL clause for a timestamp object. Converts the time into a
+     * numeric field and then creates the clause from that.
+     *
      * @param dateObj Cybox DateTimeObject
      * @param fieldName Name of the field we're testing against
      * @return SQL clause
-     * @throws TskCoreException 
+     * @throws TskCoreException
      */
     private static String processTimestampObject(DateTimeObjectPropertyType dateObj, String fieldName)
             throws TskCoreException {
@@ -638,11 +643,12 @@ public class EvalFileObj extends EvaluatableObject {
     }
 
     /**
-     * Convert a timestamp string into a numeric one.
-     * Leave it as a string since that's what we get from other object types.
+     * Convert a timestamp string into a numeric one. Leave it as a string since
+     * that's what we get from other object types.
+     *
      * @param timestampStr
      * @return String version with timestamps replaced by numeric values
-     * @throws TskCoreException 
+     * @throws TskCoreException
      */
     private static String convertTimestampString(String timestampStr)
             throws TskCoreException {
@@ -666,6 +672,7 @@ public class EvalFileObj extends EvaluatableObject {
 
     /**
      * Add a new clause to the existing clause
+     *
      * @param a_clause Current clause
      * @param a_newClause New clause
      * @return Full clause

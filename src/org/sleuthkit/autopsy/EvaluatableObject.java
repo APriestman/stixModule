@@ -27,14 +27,27 @@ public abstract class EvaluatableObject {
 
     abstract public ObservableResult evaluate();
 
+    /**
+     * Set the warnings string to the given value.
+     * @param a_warnings 
+     */
     public void setWarnings(String a_warnings) {
         warnings = a_warnings;
     }
 
+    /**
+     * Get the warnings string. This should not be used to print the final version
+     * of the warnings.
+     * @return 
+     */
     public String getWarnings() {
         return warnings;
     }
 
+    /**
+     * Add to the warnings string.
+     * @param a_newWarning 
+     */
     public void addWarning(String a_newWarning) {
         if ((warnings == null) || warnings.isEmpty()) {
             warnings = a_newWarning;
@@ -42,6 +55,17 @@ public abstract class EvaluatableObject {
         warnings = warnings + ", " + a_newWarning;
     }
 
+    /**
+     * Find a list of artifacts with the given attribute type that contain the
+     * String Object.
+     * All comparisons will look for substrings of the Blackboard artifacts that
+     * match the String Object.
+     * 
+     * @param item
+     * @param attrType
+     * @return
+     * @throws TskCoreException 
+     */
     public List<BlackboardArtifact> findArtifactsBySubstring(StringObjectPropertyType item,
             BlackboardAttribute.ATTRIBUTE_TYPE attrType) throws TskCoreException {
 
@@ -68,6 +92,7 @@ public abstract class EvaluatableObject {
 
                 for (String part : parts) {
                     if (hits == null) {
+                        // Note that this searches for artifacts with "part" as a substring
                         hits = sleuthkitCase.getBlackboardArtifacts(
                                 attrType,
                                 part, false);
@@ -107,6 +132,13 @@ public abstract class EvaluatableObject {
         return hits;
     }
 
+    /**
+     * Compare a CybOX String Object with a given string.
+     * @param stringObj The CybOX String Object
+     * @param strField The string to compare against
+     * @return true if strField is a match for the CybOX object
+     * @throws TskCoreException 
+     */
     public static boolean compareStringObject(StringObjectPropertyType stringObj, String strField)
             throws TskCoreException {
         if (stringObj.getValue() == null) {
@@ -120,6 +152,15 @@ public abstract class EvaluatableObject {
         return compareStringObject(valueStr, condition, applyCondition, strField);
     }
 
+    /**
+     * Compare a string with CybOX conditions to a given string.
+     * @param valueStr The CybOX string
+     * @param condition EQUALS, CONTAINS, STARTS_WITH, etc
+     * @param applyCondition ANY, ALL, NONE
+     * @param strField The string to compare against
+     * @return true if strField is a match for the CybOX valueStr and conditions
+     * @throws TskCoreException 
+     */
     public static boolean compareStringObject(String valueStr, ConditionTypeEnum condition,
             ConditionApplicationEnum applyCondition, String strField)
             throws TskCoreException {
@@ -130,7 +171,6 @@ public abstract class EvaluatableObject {
 
         String[] parts = valueStr.split("##comma##");
         String lowerFieldName = strField.toLowerCase();
-        boolean result = false;
 
         for (String value : parts) {
             boolean partialResult;
@@ -144,9 +184,9 @@ public abstract class EvaluatableObject {
             } else if (condition == ConditionTypeEnum.DOES_NOT_CONTAIN) {
                 partialResult = !lowerFieldName.contains(value.toLowerCase());
             } else if (condition == ConditionTypeEnum.STARTS_WITH) {
-                partialResult = !lowerFieldName.contains(value.toLowerCase());
+                partialResult = lowerFieldName.startsWith(value.toLowerCase());
             } else if (condition == ConditionTypeEnum.ENDS_WITH) {
-                partialResult = !lowerFieldName.contains(value.toLowerCase());
+                partialResult = lowerFieldName.endsWith(value.toLowerCase());
             } else {
                 throw new TskCoreException("Could not process condition " + condition.value() + " on " + value);
             }
@@ -179,6 +219,11 @@ public abstract class EvaluatableObject {
         return false;
     }
 
+    /**
+     * Format the warnings that will be printed.
+     * Basically, just put parentheses around them if the string isn't empty.
+     * @return 
+     */
     public String getPrintableWarnings() {
         String warningsToPrint = "";
         if ((getWarnings() != null)

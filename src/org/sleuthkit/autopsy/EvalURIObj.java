@@ -41,12 +41,11 @@ public class EvalURIObj extends EvaluatableObject {
                     spacing, ObservableResult.ObservableState.INDETERMINATE, null);
         }
         String addressStr = obj.getValue().getValue().toString();
+        
+        // Strip off http:// or https://
+        String modifiedAddressStr = addressStr.toLowerCase();
+        modifiedAddressStr = modifiedAddressStr.replaceAll("http(s)?://", "");
 
-        //if(! ((obj.getValue().getCondition() == null) ||
-        //            (obj.getValue().getCondition() == ConditionTypeEnum.EQUALS))){
-        //    return new ObservableResult(id, "URIObject: Can not process condition " + obj.getValue().getCondition().toString() +
-        //            " on URI object", spacing, ObservableResult.ObservableState.INDETERMINATE, null);
-        //}
         // Since we have single URL artifacts, ALL and NONE conditions probably don't make sense to test
         if (!((obj.getValue().getApplyCondition() == null)
                 || (obj.getValue().getApplyCondition() == ConditionApplicationEnum.ANY))) {
@@ -58,6 +57,7 @@ public class EvalURIObj extends EvaluatableObject {
         SleuthkitCase sleuthkitCase = case1.getSleuthkitCase();
 
         try {
+            /*
             if ((obj.getValue().getCondition() == null)
                     || (obj.getValue().getCondition() == ConditionTypeEnum.EQUALS)) {
 
@@ -86,7 +86,7 @@ public class EvalURIObj extends EvaluatableObject {
                     return new ObservableResult(id, "URIObject: Found no matches for address = \"" + addressStr + "\"",
                             spacing, ObservableResult.ObservableState.FALSE, null);
                 }
-            } else {
+            } else {*/
 
                 // This is inefficient, but the easiest way to do it.
                 List<BlackboardArtifact> finalHits = new ArrayList<BlackboardArtifact>();
@@ -99,8 +99,15 @@ public class EvalURIObj extends EvaluatableObject {
 
                     for (BlackboardAttribute attr : art.getAttributes()) {
                         if (attr.getAttributeTypeID() == BlackboardAttribute.ATTRIBUTE_TYPE.TSK_KEYWORD.getTypeID()) {
-                            if (compareStringObject(addressStr, obj.getValue().getCondition(),
-                                    obj.getValue().getApplyCondition(), attr.getValueString())) {
+                            
+                            String modifiedAttrString = attr.getValueString();
+                            if(modifiedAttrString != null){
+                                modifiedAttrString = modifiedAttrString.toLowerCase();
+                                modifiedAttrString = modifiedAttrString.replaceAll("http(s)?://", "");
+                            }
+                            
+                            if (compareStringObject(modifiedAddressStr, obj.getValue().getCondition(),
+                                    obj.getValue().getApplyCondition(), modifiedAttrString)) {
                                 finalHits.add(art);
                             }
                         }
@@ -118,7 +125,7 @@ public class EvalURIObj extends EvaluatableObject {
 
                 return new ObservableResult(id, "URIObject: Found no matches for " + addressStr,
                         spacing, ObservableResult.ObservableState.FALSE, null);
-            }
+            /*}*/
 
         } catch (TskCoreException ex) {
             return new ObservableResult(id, "URIObject: Exception during evaluation: " + ex.getLocalizedMessage(),

@@ -24,7 +24,7 @@ import org.mitre.cybox.objects.WindowsSystem;
  */
 public class EvalSystemObj extends EvaluatableObject {
 
-    private SystemObjectType obj;
+    private final SystemObjectType obj;
 
     public EvalSystemObj(SystemObjectType a_obj, String a_id, String a_spacing) {
         obj = a_obj;
@@ -42,7 +42,7 @@ public class EvalSystemObj extends EvaluatableObject {
 
         // Check which fields are present and record them 
         boolean haveHostname = false;
-       // boolean haveDomain = false; 
+        // boolean haveDomain = false; 
         // boolean haveProcArch = false;
         boolean haveProcName = false;
         boolean haveTempDir = false;
@@ -61,7 +61,7 @@ public class EvalSystemObj extends EvaluatableObject {
             if (!searchString.isEmpty()) {
                 searchString += " and ";
             }
-            searchString += "Processor \"" + obj.getHostname().getValue().toString() + "\"";
+            searchString += "Processor \"" + obj.getProcessor().getValue().toString() + "\"";
         }
         //if(obj.getProcessorArchitecture() != null){
         //    haveProcArch = true;
@@ -117,7 +117,6 @@ public class EvalSystemObj extends EvaluatableObject {
                 }
                 searchString += "Temp dir \"" + winSysObj.getWindowsTempDirectory().getValue().toString() + "\"";
             }
-            //if(winSysObj.getDomains()) //??
         }
 
         // Return if we have nothing to search for
@@ -128,6 +127,8 @@ public class EvalSystemObj extends EvaluatableObject {
                     spacing, ObservableResult.ObservableState.INDETERMINATE, null);
         }
 
+        setUnsupportedFieldWarnings();
+        
         try {
             Case case1 = Case.getCurrentCase();
             SleuthkitCase sleuthkitCase = case1.getSleuthkitCase();
@@ -152,34 +153,31 @@ public class EvalSystemObj extends EvaluatableObject {
                     if (haveHostname) {
                         foundHostnameMatch = compareStringObject(obj.getHostname(), info.getCompName());
                     }
-                    //if(haveProcArch){
-                    //    System.out.println("Found proc arch");
-                    //}
                     if (haveProcName) {
                         foundProcNameMatch = compareStringObject(obj.getProcessor(),
                                 info.getAttributeValue(BlackboardAttribute.ATTRIBUTE_TYPE.TSK_PROCESSOR_NAME));
                     }
-                    if (haveTempDir) {
+                    if (haveTempDir && (winSysObj != null)) {
                         foundTempDirMatch = compareStringObject(winSysObj.getWindowsTempDirectory(),
                                 info.getAttributeValue(BlackboardAttribute.ATTRIBUTE_TYPE.TSK_TEMP_DIR));
                     }
-                    if (haveProductName) {
+                    if (haveProductName && (winSysObj != null)) {
                         foundProductNameMatch = compareStringObject(winSysObj.getProductName(),
                                 info.getAttributeValue(BlackboardAttribute.ATTRIBUTE_TYPE.TSK_PROG_NAME));
                     }
-                    if (haveSystemRoot) {
+                    if (haveSystemRoot && (winSysObj != null)) {
                         foundSystemRootMatch = compareStringObject(winSysObj.getWindowsSystemDirectory(),
                                 info.getAttributeValue(BlackboardAttribute.ATTRIBUTE_TYPE.TSK_PATH));
                     }
-                    if (haveProductID) {
+                    if (haveProductID && (winSysObj != null)) {
                         foundProductIDMatch = compareStringObject(winSysObj.getProductID(),
                                 info.getAttributeValue(BlackboardAttribute.ATTRIBUTE_TYPE.TSK_PRODUCT_ID));
                     }
-                    if (haveOwner) {
+                    if (haveOwner && (winSysObj != null)) {
                         foundOwnerMatch = compareStringObject(winSysObj.getRegisteredOwner(),
                                 info.getAttributeValue(BlackboardAttribute.ATTRIBUTE_TYPE.TSK_OWNER));
                     }
-                    if (haveOrganization) {
+                    if (haveOrganization && (winSysObj != null)) {
                         foundOrganizationMatch = compareStringObject(winSysObj.getRegisteredOrganization(),
                                 info.getAttributeValue(BlackboardAttribute.ATTRIBUTE_TYPE.TSK_ORGANIZATION));
                     }
@@ -217,5 +215,82 @@ public class EvalSystemObj extends EvaluatableObject {
             return new ObservableResult(id, "SystemObject: Exception during evaluation: " + ex.getLocalizedMessage(),
                     spacing, ObservableResult.ObservableState.INDETERMINATE, null);
         }
+    }
+    
+    /**
+     * Set up the warning for any fields in the object that aren't supported.
+     */
+    private void setUnsupportedFieldWarnings(){
+        List<String> fieldNames = new ArrayList<String>();
+        
+        if(obj.getAvailablePhysicalMemory() != null){
+            fieldNames.add("Available_Physical_Memory");
+        }
+        if(obj.getBIOSInfo() != null){
+            fieldNames.add("BIOS_Info");
+        }
+        if(obj.getDate() != null){
+            fieldNames.add("Date");
+        }
+        if(obj.getLocalTime() != null){
+            fieldNames.add("Local_Time");
+        }
+        if(obj.getNetworkInterfaceList() != null){
+            fieldNames.add("Network_Interface_List");
+        }
+        if(obj.getOS() != null){
+            fieldNames.add("OS");
+        }
+        if(obj.getProcessorArchitecture() != null){
+            fieldNames.add("Processor_Architecture");
+        }
+        if(obj.getSystemTime() != null){
+            fieldNames.add("System_Time");
+        }
+        if(obj.getTimezoneDST() != null){
+            fieldNames.add("Timezone_DST");
+        }
+        if(obj.getTimezoneStandard() != null){
+            fieldNames.add("Timezone_Standard");
+        }
+        if(obj.getTotalPhysicalMemory() != null){
+            fieldNames.add("Total_Physical_Memory");
+        }
+        if(obj.getUptime() != null){
+            fieldNames.add("Uptime");
+        }
+        if(obj.getUsername() != null){
+            fieldNames.add("Username");
+        }
+        
+        if (obj instanceof WindowsSystem) {
+            WindowsSystem winSysObj = (WindowsSystem) obj;
+        
+            if(winSysObj.getDomains() != null){
+                fieldNames.add("Domain");
+            }
+            if(winSysObj.getGlobalFlagList() != null){
+                fieldNames.add("Global_Flag_List");
+            }
+            if(winSysObj.getNetBIOSName() != null){
+                fieldNames.add("NetBIOS_Name");
+            }
+            if(winSysObj.getOpenHandleList() != null){
+                fieldNames.add("Open_Handle_List");
+            }
+            if(winSysObj.getWindowsDirectory() != null){
+                fieldNames.add("Windows_Directory");
+            }
+        }
+        
+        String warningStr = "";
+        for(String name:fieldNames){
+            if(! warningStr.isEmpty()){
+                warningStr += ", ";
+            }
+            warningStr += name;
+        }
+        
+        addWarning("Unsupported field(s): " + warningStr);
     }
 }

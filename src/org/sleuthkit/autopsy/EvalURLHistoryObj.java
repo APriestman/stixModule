@@ -43,6 +43,7 @@ public class EvalURLHistoryObj extends EvaluatableObject {
 
         // For displaying what we were looking for in the results
         String baseSearchString = "";
+        String finalResultsStr = "";
 
         // The browser info is the same for each entry
         boolean haveBrowserName = false;
@@ -65,6 +66,9 @@ public class EvalURLHistoryObj extends EvaluatableObject {
                 boolean haveReferrer = false;
                 boolean havePageTitle = false;
                 boolean haveUserProfile = false;
+                
+                
+                setUnsupportedEntryFieldWarnings(entry);
 
                 // At present, the search string doesn't get reported (because there could be different ones
                 // for multiple URL History Entries) but it's good for debugging.
@@ -109,6 +113,11 @@ public class EvalURLHistoryObj extends EvaluatableObject {
                     }
                     searchString += "Hostname \"" + entry.getHostname().getHostnameValue().getValue() + "\"";
                 }
+                
+                if(! finalResultsStr.isEmpty()){
+                    finalResultsStr += ", ";
+                }
+                finalResultsStr += searchString;
 
                 if (!(haveURL || haveHostname || haveReferrer
                         || havePageTitle || haveUserProfile || haveBrowserName)) {
@@ -121,7 +130,7 @@ public class EvalURLHistoryObj extends EvaluatableObject {
                     SleuthkitCase sleuthkitCase = case1.getSleuthkitCase();
                     List<BlackboardArtifact> artList
                             = sleuthkitCase.getBlackboardArtifacts(BlackboardArtifact.ARTIFACT_TYPE.TSK_WEB_HISTORY);
-
+                    
                     for (BlackboardArtifact art : artList) {
                         boolean foundURLMatch = false;
                         boolean foundHostnameMatch = false;
@@ -198,18 +207,18 @@ public class EvalURLHistoryObj extends EvaluatableObject {
                 for (BlackboardArtifact a : finalHits) {
                     artData.add(new StixArtifactData(a.getObjectID(), id, "URLHistory"));
                 }
-                return new ObservableResult(id, "URLHistoryObject: Found at least one match",
+                return new ObservableResult(id, "URLHistoryObject: Found at least one match for " + finalResultsStr,
                         spacing, ObservableResult.ObservableState.TRUE, artData);
             }
 
             // Didn't find any matches
-            return new ObservableResult(id, "URLHistoryObject: No matches found",
+            return new ObservableResult(id, "URLHistoryObject: No matches found for " + finalResultsStr,
                     spacing, ObservableResult.ObservableState.FALSE, null);
 
         } else if (haveBrowserName) {
+            
             // It doesn't seem too useful, but we can just search for the browser name
             // if there aren't any URL entries
-
             try {
                 Case case1 = Case.getCurrentCase();
                 SleuthkitCase sleuthkitCase = case1.getSleuthkitCase();
@@ -242,7 +251,7 @@ public class EvalURLHistoryObj extends EvaluatableObject {
                 }
 
                 // Didn't find any matches
-                return new ObservableResult(id, "URLHistoryObject: No matches found",
+                return new ObservableResult(id, "URLHistoryObject: No matches found for " + baseSearchString,
                         spacing, ObservableResult.ObservableState.FALSE, null);
             } catch (TskCoreException ex) {
                 return new ObservableResult(id, "URLHistoryObject: Exception during evaluation: " + ex.getLocalizedMessage(),
@@ -255,5 +264,44 @@ public class EvalURLHistoryObj extends EvaluatableObject {
                     spacing, ObservableResult.ObservableState.INDETERMINATE, null);
         }
 
+    }
+    
+    /**
+     * Set up the warning for any fields in the URL_History_Entry object that aren't supported.
+     */
+    private void setUnsupportedEntryFieldWarnings(URLHistoryEntryType entry){
+        List<String> fieldNames = new ArrayList<String>();
+        
+        if(entry.getUserProfileName() != null){
+            fieldNames.add("User_Profile_Name");
+        }
+        if(entry.getVisitCount() != null){
+            fieldNames.add("Visit_Count");
+        }
+        if(entry.getManuallyEnteredCount() != null){
+            fieldNames.add("Manually_Entered_Count");
+        }
+        if(entry.getModificationDateTime() != null){
+            fieldNames.add("Modification_DateTime");
+        }
+        if(entry.getExpirationDateTime() != null){
+            fieldNames.add("Expiration_DateTime");
+        }
+        if(entry.getFirstVisitDateTime() != null){
+            fieldNames.add("First_Visit_DateTime");
+        }
+        if(entry.getLastVisitDateTime() != null){
+            fieldNames.add("Last_Visit_DateTime");
+        }
+        
+        String warningStr = "";
+        for(String name:fieldNames){
+            if(! warningStr.isEmpty()){
+                warningStr += ", ";
+            }
+            warningStr += name;
+        }
+        
+        addWarning("Unsupported URL_History_Entry field(s): " + warningStr);
     }
 }

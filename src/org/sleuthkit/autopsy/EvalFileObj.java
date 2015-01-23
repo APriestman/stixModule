@@ -18,7 +18,6 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
 import org.mitre.cybox.common_2.ConditionApplicationEnum;
 
 import org.mitre.cybox.objects.FileObjectType;
@@ -84,7 +83,45 @@ public class EvalFileObj extends EvaluatableObject {
 
         if (obj.getFilePath() != null) {
             try {
-                String newClause = processStringObject(obj.getFilePath(), "parent_path");
+                
+                String[] parts = obj.getFilePath().getValue().toString().split("##comma##");
+                String finalPathStr = "";
+                
+                for (String filePath : parts) {
+                    // First, we need to normalize the path
+                    String currentFilePath = filePath;
+                
+                    // Remove the drive letter
+                    if(currentFilePath.matches("^[A-Za-z]:.*")){
+                        currentFilePath = currentFilePath.substring(2);
+                    }
+                
+                    // Change any backslashes to forward slashes
+                    currentFilePath = currentFilePath.replace("\\", "/");
+                    
+                    // The path needs to start with a slash
+                    if(! currentFilePath.startsWith("/")){
+                        currentFilePath = "/" + currentFilePath;
+                    }
+                
+                    // If the path does not end in a slash, the final part should be the file name.
+                    if(! currentFilePath.endsWith("/")){
+                        int lastSlash = currentFilePath.lastIndexOf('/');
+                        if(lastSlash >= 0){
+                            currentFilePath = currentFilePath.substring(0, lastSlash + 1);
+                        }
+                    }
+                    
+                    // Reconstruct the path string (which may be multi-part)
+                    if(!finalPathStr.isEmpty()){
+                        finalPathStr += "##comma##";
+                    }
+                    finalPathStr += currentFilePath;
+                }
+                        
+                String newClause = processStringObject(finalPathStr, obj.getFilePath().getCondition(),
+                        obj.getFilePath().getApplyCondition(), "parent_path");
+                
                 whereClause = addClause(whereClause, newClause);
             } catch (TskCoreException ex) {
                 addWarning(ex.getLocalizedMessage());
@@ -125,7 +162,7 @@ public class EvalFileObj extends EvaluatableObject {
                         String newClause = "md5=\'" + h.getSimpleHashValue().getValue() + "\'";
                         whereClause = addClause(whereClause, newClause);
                     } else {
-                        addWarning("Could not process hash type " + h.getType());
+                        addWarning("Could not process hash type " + h.getType().getValue().toString());
                     }
                 } else {
                     addWarning("Could not process non-simple hash value");
@@ -158,8 +195,6 @@ public class EvalFileObj extends EvaluatableObject {
             addWarning("Unsupported fields: " + unsupportedFields);
         }
 
-        String warningsToPrint = getPrintableWarnings();
-
         if (whereClause.length() > 0) {
             try {
                 List<AbstractFile> matchingFiles = sleuthkitCase.findAllFilesWhere(whereClause);
@@ -173,11 +208,11 @@ public class EvalFileObj extends EvaluatableObject {
                             artData.add(new StixArtifactData(a, id, "FileObject"));
                         }
 
-                        return new ObservableResult(id, "FileObject: Found " + matchingFiles.size() + " matches for " + whereClause + warningsToPrint,
+                        return new ObservableResult(id, "FileObject: Found " + matchingFiles.size() + " matches for " + whereClause + getPrintableWarnings(),
                                 spacing, ObservableResult.ObservableState.TRUE, artData);
                     } else {
 
-                        // At some point we may want to tag the matching files in Autopsy, so keep track of them
+                        // We need to tag the matching files in Autopsy, so keep track of them
                         List<AbstractFile> secondaryHits = new ArrayList<AbstractFile>();
 
                         for (AbstractFile file : matchingFiles) {
@@ -199,19 +234,46 @@ public class EvalFileObj extends EvaluatableObject {
                             if (obj.getFileFormat() != null) {
 
                                 boolean foundMatch = false;
+                                String formatsFound = "";
                                 List<BlackboardArtifact> arts = file.getArtifacts(BlackboardArtifact.ARTIFACT_TYPE.TSK_GEN_INFO);
                                 for (BlackboardArtifact artifact : arts) {
                                     for (BlackboardAttribute attr : artifact.getAttributes()) {
                                         if (attr.getAttributeTypeID() == BlackboardAttribute.ATTRIBUTE_TYPE.TSK_FILE_TYPE_SIG.getTypeID()) {
+                                            if(! formatsFound.isEmpty()){
+                                                formatsFound += ", ";
+                                            }
+                                            formatsFound += attr.getValueString();
                                             if (attr.getValueString().equalsIgnoreCase(obj.getFileFormat().getValue().toString())) {
+                                                foundMatch = true;
+                                            }
+                                            
+                                            // Try again looking for the last part of the Autopsy version as a substring
+                                            // of the STIX version
+                                            String type = attr.getValueString().replaceFirst("^.*/", "");
+                                            
+                                            // This is reversed of how the comparison normally go
+                                            if(compareStringObject(type, ConditionTypeEnum.CONTAINS, null, obj.getFileFormat().getValue().toString())){
                                                 foundMatch = true;
                                             }
                                         }
                                     }
                                 }
+                                
 
-                                if (!foundMatch) {
-                                    passedTests = false;
+                                // It looks like the STIX file formats can be different than what Autopsy stores
+                                // (mime vs. unix file), so don't kill a file based on this field not matching.
+                                //if (!foundMatch) {
+                                //    passedTests = false;
+                                //}
+                                if(formatsFound.isEmpty()){
+                                    addWarning("Warning: Did not match File_Format field " + obj.getFileFormat().getValue().toString() +
+                                               " (no file formats found)");
+                                }
+                                else{
+                                    if(! foundMatch){
+                                        addWarning("Warning: Did not match File_Format field " + obj.getFileFormat().getValue().toString() +
+                                               " against " + formatsFound);
+                                    }
                                 }
                             }
 
@@ -223,7 +285,7 @@ public class EvalFileObj extends EvaluatableObject {
                         if (secondaryHits.isEmpty()) {
 
                             return new ObservableResult(id, "FileObject: Found " + matchingFiles.size() + " matches for " + whereClause
-                                    + " but none for secondary tests on " + listSecondaryFields() + warningsToPrint,
+                                    + " but none for secondary tests on " + listSecondaryFields() + getPrintableWarnings(),
                                     spacing, ObservableResult.ObservableState.FALSE, null);
                         } else {
                             List<StixArtifactData> artData = new ArrayList<StixArtifactData>();
@@ -231,12 +293,12 @@ public class EvalFileObj extends EvaluatableObject {
                                 artData.add(new StixArtifactData(a, id, "FileObject"));
                             }
                             return new ObservableResult(id, "FileObject: Found " + secondaryHits.size() + " matches for " + whereClause
-                                    + " and secondary tests on " + listSecondaryFields() + warningsToPrint,
+                                    + " and secondary tests on " + listSecondaryFields() + getPrintableWarnings(),
                                     spacing, ObservableResult.ObservableState.TRUE, artData);
                         }
                     }
                 } else {
-                    return new ObservableResult(id, "FileObject: Found no matches for " + whereClause + warningsToPrint,
+                    return new ObservableResult(id, "FileObject: Found no matches for " + whereClause + getPrintableWarnings(),
                             spacing, ObservableResult.ObservableState.FALSE, null);
                 }
             } catch (TskCoreException ex) {
@@ -247,10 +309,15 @@ public class EvalFileObj extends EvaluatableObject {
 
         }
 
-        return new ObservableResult(id, "FileObject: No evaluatable fields " + warningsToPrint, spacing,
+        return new ObservableResult(id, "FileObject: No evaluatable fields " + getPrintableWarnings(), spacing,
                 ObservableResult.ObservableState.INDETERMINATE, null);
     }
 
+    /**
+     * Create a list of secondary fields.
+     * These are the ones that we only test on the matches for the primary fields.
+     * @return List of secondary fields
+     */
     private String listSecondaryFields() {
         String secondaryFields = "";
 
@@ -265,6 +332,10 @@ public class EvalFileObj extends EvaluatableObject {
         return secondaryFields;
     }
 
+    /**
+     * List unsupported fields found in the object.
+     * @return List of unsupported fields
+     */
     private String listUnsupportedFields() {
         String unsupportedFields = "";
 
@@ -326,6 +397,12 @@ public class EvalFileObj extends EvaluatableObject {
         return unsupportedFields;
     }
 
+    /**
+     * Convert timestamp string into a long.
+     * @param timeStr
+     * @return
+     * @throws ParseException 
+     */
     private static long convertTimestamp(String timeStr) throws ParseException {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -336,6 +413,14 @@ public class EvalFileObj extends EvaluatableObject {
         return unixTime;
     }
 
+    /**
+     * Return the SQL clause for an unsigned long object.
+     * Splits into fields and call the more generic version of the function.
+     * @param longObj The Cybox UnsignedLong object
+     * @param fieldName Name of the field to test against
+     * @return SQL clause
+     * @throws TskCoreException 
+     */
     private static String processULongObject(UnsignedLongObjectPropertyType longObj, String fieldName)
             throws TskCoreException {
 
@@ -343,6 +428,15 @@ public class EvalFileObj extends EvaluatableObject {
                 longObj.getApplyCondition(), fieldName);
     }
 
+    /**
+     * Return the SQL clause for a numeric object.
+     * @param valueStr Value (as string)
+     * @param typeCondition Cybox condition
+     * @param applyCondition Cybox apply_condition
+     * @param fieldName Name of the field to test against
+     * @return SQL clause
+     * @throws TskCoreException 
+     */
     private static String processNumericFields(String valueStr, ConditionTypeEnum typeCondition,
             ConditionApplicationEnum applyCondition, String fieldName)
             throws TskCoreException {
@@ -425,34 +519,60 @@ public class EvalFileObj extends EvaluatableObject {
         }
     }
 
+    /**
+     * Return the SQL clause for a String object
+     * @param stringObj The full Cybox String object
+     * @param fieldName Name of the field we're testing against
+     * @return SQL clause
+     * @throws TskCoreException 
+     */
     private static String processStringObject(StringObjectPropertyType stringObj, String fieldName)
             throws TskCoreException {
 
+        return processStringObject(stringObj.getValue().toString(), stringObj.getCondition(), 
+                stringObj.getApplyCondition(), fieldName);
+    }
+        
+    /**
+     * Return the SQL clause for a String object
+     * @param valueStr Value as a string
+     * @param condition Cybox condition
+     * @param applyCondition Cybox apply_condition
+     * @param fieldName Name of the field we're testing against
+     * @return SQL clause
+     * @throws TskCoreException 
+     */
+    public static String processStringObject(String valueStr, ConditionTypeEnum condition,
+            ConditionApplicationEnum applyCondition, String fieldName)    
+            throws TskCoreException {
+        
         String fullClause = "";
-
-        if (stringObj.getValue().toString().isEmpty()) {
+        String lowerFieldName = "lower(" + fieldName + ")";
+        
+        if (valueStr.isEmpty()) {
             throw new TskCoreException("Empty value field");
         }
 
-        String[] parts = stringObj.getValue().toString().split("##comma##");
+        String[] parts = valueStr.split("##comma##");
 
         for (String value : parts) {
+            String lowerValue = value.toLowerCase();
             String partialClause;
-            if ((stringObj.getCondition() == null)
-                    || (stringObj.getCondition() == ConditionTypeEnum.EQUALS)) {
-                partialClause = fieldName + "=\'" + value + "\'";
-            } else if (stringObj.getCondition() == ConditionTypeEnum.DOES_NOT_EQUAL) {
-                partialClause = fieldName + " !=\'%" + value + "%\'";
-            } else if (stringObj.getCondition() == ConditionTypeEnum.CONTAINS) {
-                partialClause = fieldName + " LIKE \'%" + value + "%\'";
-            } else if (stringObj.getCondition() == ConditionTypeEnum.DOES_NOT_CONTAIN) {
-                partialClause = fieldName + " NOT LIKE \'%" + value + "%\'";
-            } else if (stringObj.getCondition() == ConditionTypeEnum.STARTS_WITH) {
-                partialClause = fieldName + " LIKE \'" + value + "%\'";
-            } else if (stringObj.getCondition() == ConditionTypeEnum.ENDS_WITH) {
-                partialClause = fieldName + " LIKE \'%" + value + "\'";
+            if ((condition == null)
+                    || (condition == ConditionTypeEnum.EQUALS)) {
+                partialClause = lowerFieldName + "=\'" + lowerValue + "\'";
+            } else if (condition == ConditionTypeEnum.DOES_NOT_EQUAL) {
+                partialClause = lowerFieldName + " !=\'%" + lowerValue + "%\'";
+            } else if (condition == ConditionTypeEnum.CONTAINS) {
+                partialClause = lowerFieldName + " LIKE \'%" + lowerValue + "%\'";
+            } else if (condition == ConditionTypeEnum.DOES_NOT_CONTAIN) {
+                partialClause = lowerFieldName + " NOT LIKE \'%" + lowerValue + "%\'";
+            } else if (condition == ConditionTypeEnum.STARTS_WITH) {
+                partialClause = lowerFieldName + " LIKE \'" + lowerValue + "%\'";
+            } else if (condition == ConditionTypeEnum.ENDS_WITH) {
+                partialClause = lowerFieldName + " LIKE \'%" + lowerValue + "\'";
             } else {
-                throw new TskCoreException("Could not process condition " + stringObj.getCondition().value() + " on " + fieldName);
+                throw new TskCoreException("Could not process condition " + condition.value() + " on " + fieldName);
             }
 
             if (fullClause.isEmpty()) {
@@ -460,14 +580,14 @@ public class EvalFileObj extends EvaluatableObject {
                 if (parts.length > 1) {
                     fullClause += "( ";
                 }
-                if (stringObj.getApplyCondition() == ConditionApplicationEnum.NONE) {
+                if (applyCondition == ConditionApplicationEnum.NONE) {
                     fullClause += " NOT ";
                 }
                 fullClause += partialClause;
             } else {
-                if (stringObj.getApplyCondition() == ConditionApplicationEnum.ALL) {
+                if (applyCondition == ConditionApplicationEnum.ALL) {
                     fullClause += " AND " + partialClause;
-                } else if (stringObj.getApplyCondition() == ConditionApplicationEnum.NONE) {
+                } else if (applyCondition == ConditionApplicationEnum.NONE) {
                     fullClause += " AND NOT " + partialClause;
                 } else {
                     fullClause += " OR " + partialClause;
@@ -482,6 +602,14 @@ public class EvalFileObj extends EvaluatableObject {
         return fullClause;
     }
 
+    /**
+     * Create the SQL clause for a timestamp object.
+     * Converts the time into a numeric field and then creates the clause from that.
+     * @param dateObj Cybox DateTimeObject
+     * @param fieldName Name of the field we're testing against
+     * @return SQL clause
+     * @throws TskCoreException 
+     */
     private static String processTimestampObject(DateTimeObjectPropertyType dateObj, String fieldName)
             throws TskCoreException {
 
@@ -496,6 +624,13 @@ public class EvalFileObj extends EvaluatableObject {
         }
     }
 
+    /**
+     * Convert a timestamp string into a numeric one.
+     * Leave it as a string since that's what we get from other object types.
+     * @param timestampStr
+     * @return String version with timestamps replaced by numeric values
+     * @throws TskCoreException 
+     */
     private static String convertTimestampString(String timestampStr)
             throws TskCoreException {
         try {
@@ -516,6 +651,12 @@ public class EvalFileObj extends EvaluatableObject {
 
     }
 
+    /**
+     * Add a new clause to the existing clause
+     * @param a_clause Current clause
+     * @param a_newClause New clause
+     * @return Full clause
+     */
     private static String addClause(String a_clause, String a_newClause) {
 
         if ((a_clause == null) || a_clause.isEmpty()) {
@@ -525,10 +666,4 @@ public class EvalFileObj extends EvaluatableObject {
         return (a_clause + " AND " + a_newClause);
     }
 
-    private static String addWarning(String a_warnings, String a_newWarning) {
-        if ((a_warnings == null) || a_warnings.isEmpty()) {
-            return a_newWarning;
-        }
-        return a_warnings + ", " + a_newWarning;
-    }
 }

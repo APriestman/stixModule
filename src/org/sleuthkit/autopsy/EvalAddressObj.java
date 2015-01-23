@@ -41,82 +41,137 @@ public class EvalAddressObj extends EvaluatableObject {
                     spacing, ObservableResult.ObservableState.INDETERMINATE, null);
         }
 
-        String addressStr = obj.getAddressValue().getValue().toString();
+        String origAddressStr = obj.getAddressValue().getValue().toString();
 
-        //if(! ((obj.getAddressValue().getCondition() == null) ||
-        //            (obj.getAddressValue().getCondition() == ConditionTypeEnum.EQUALS))){
-        //    return new ObservableResult(id, "Can not process condition " + obj.getAddressValue().getCondition().toString() +
-        //            " on Address object", spacing, ObservableResult.ObservableState.INDETERMINATE, null);
-        //} 
-        if (!((obj.getAddressValue().getApplyCondition() == null)
-                || (obj.getAddressValue().getApplyCondition() == ConditionApplicationEnum.ANY))) {
+        // For now, we don't support "NONE" because it honestly doesn't seem like it
+        // would ever appear in practice. 
+        if (((obj.getAddressValue().getApplyCondition() != null)
+                && (obj.getAddressValue().getApplyCondition() == ConditionApplicationEnum.NONE))) {
             return new ObservableResult(id, "AddressObject: Can not process apply condition " + obj.getAddressValue().getApplyCondition().toString()
                     + " on Address object", spacing, ObservableResult.ObservableState.INDETERMINATE, null);
         }
 
+        // Set warnings for any unsupported fields
+        setUnsupportedFieldWarnings();
+        
         Case case1 = Case.getCurrentCase();
         SleuthkitCase sleuthkitCase = case1.getSleuthkitCase();
 
         try {
-            if ((obj.getAddressValue().getCondition() == null)
-                    || (obj.getAddressValue().getCondition() == ConditionTypeEnum.EQUALS)) {
-                List<BlackboardArtifact> arts = sleuthkitCase.getBlackboardArtifacts(
-                        BlackboardArtifact.ARTIFACT_TYPE.TSK_KEYWORD_HIT,
-                        BlackboardAttribute.ATTRIBUTE_TYPE.TSK_KEYWORD,
-                        addressStr);
+            // Need to check that every part of the string had at least one match
+            // in the AND case
+            boolean everyPartMatched = true;
+            List<BlackboardArtifact> combinedArts = new ArrayList<BlackboardArtifact>();
+            String searchString = "";
+            String[] parts = origAddressStr.split("##comma##");
+            
+            for(String addressStr:parts){
+                
+                // Update the string to show in the results
+                if(! searchString.isEmpty()){
+                    
+                    if((obj.getAddressValue().getApplyCondition() != null) &&
+                           (obj.getAddressValue().getApplyCondition() == ConditionApplicationEnum.ALL)){
+                        searchString += " AND ";
+                    }
+                    else{
+                        searchString += " OR ";
+                    }
+                }
+                searchString += addressStr;
+                
+                
+                if ((obj.getAddressValue().getCondition() == null)
+                        || (obj.getAddressValue().getCondition() == ConditionTypeEnum.EQUALS)) {
+                    List<BlackboardArtifact> arts = sleuthkitCase.getBlackboardArtifacts(
+                            BlackboardArtifact.ARTIFACT_TYPE.TSK_KEYWORD_HIT,
+                            BlackboardAttribute.ATTRIBUTE_TYPE.TSK_KEYWORD,
+                            addressStr);
 
-                if (!arts.isEmpty()) {
-
-                    List<StixArtifactData> artData = new ArrayList<StixArtifactData>();
-                    for (BlackboardArtifact a : arts) {
-                        artData.add(new StixArtifactData(a.getObjectID(), id, "AddressObject"));
+                    if(arts.isEmpty()){
+                        everyPartMatched = false;
+                    }
+                    else{
+                        combinedArts.addAll(arts);
                     }
 
-                    return new ObservableResult(id, "AddressObject: Found " + arts.size() + " matches for address = \"" + addressStr + "\"",
-                            spacing, ObservableResult.ObservableState.TRUE, artData);
-
                 } else {
-                    return new ObservableResult(id, "AddressObject: Found no matches for address = \"" + addressStr + "\"",
-                            spacing, ObservableResult.ObservableState.FALSE, null);
-                }
+                    // This is inefficient, but the easiest way to do it.
 
-            } else {
-                // This is inefficient, but the easiest way to do it.
+                    List<BlackboardArtifact> finalHits = new ArrayList<BlackboardArtifact>();
 
-                List<BlackboardArtifact> finalHits = new ArrayList<BlackboardArtifact>();
+                    // Get all the URL artifacts
+                    List<BlackboardArtifact> artList
+                            = sleuthkitCase.getBlackboardArtifacts(BlackboardArtifact.ARTIFACT_TYPE.TSK_KEYWORD_HIT);
 
-                // Get all the URL artifacts
-                List<BlackboardArtifact> artList
-                        = sleuthkitCase.getBlackboardArtifacts(BlackboardArtifact.ARTIFACT_TYPE.TSK_KEYWORD_HIT);
+                    for (BlackboardArtifact art : artList) {
 
-                for (BlackboardArtifact art : artList) {
-
-                    for (BlackboardAttribute attr : art.getAttributes()) {
-                        if (attr.getAttributeTypeID() == BlackboardAttribute.ATTRIBUTE_TYPE.TSK_KEYWORD.getTypeID()) {
-                            if (compareStringObject(addressStr, obj.getAddressValue().getCondition(),
-                                    obj.getAddressValue().getApplyCondition(), attr.getValueString())) {
-                                finalHits.add(art);
+                        for (BlackboardAttribute attr : art.getAttributes()) {
+                            if (attr.getAttributeTypeID() == BlackboardAttribute.ATTRIBUTE_TYPE.TSK_KEYWORD.getTypeID()) {
+                                if (compareStringObject(addressStr, obj.getAddressValue().getCondition(),
+                                        obj.getAddressValue().getApplyCondition(), attr.getValueString())) {
+                                    finalHits.add(art);
+                                }
                             }
                         }
                     }
-                }
 
-                if (!finalHits.isEmpty()) {
-                    List<StixArtifactData> artData = new ArrayList<StixArtifactData>();
-                    for (BlackboardArtifact a : finalHits) {
-                        artData.add(new StixArtifactData(a.getObjectID(), id, "AddressObject"));
+                    if(finalHits.isEmpty()){
+                        everyPartMatched = false;
                     }
-                    return new ObservableResult(id, "AddressObject: Found a match for " + addressStr,
-                            spacing, ObservableResult.ObservableState.TRUE, artData);
+                    else{
+                        combinedArts.addAll(finalHits);
+                    }
                 }
-
-                return new ObservableResult(id, "AddressObject: Found no matches for " + addressStr,
-                        spacing, ObservableResult.ObservableState.FALSE, null);
             }
+            
+            // If we're in the ALL case, make sure every piece matched
+            if((obj.getAddressValue().getApplyCondition() != null) &&
+                (obj.getAddressValue().getApplyCondition() == ConditionApplicationEnum.ALL) &&
+                (! everyPartMatched)){
+                return new ObservableResult(id, "AddressObject: No matches for " + searchString,
+                                spacing, ObservableResult.ObservableState.FALSE, null);
+            }
+            
+            if (!combinedArts.isEmpty()) {
+                        List<StixArtifactData> artData = new ArrayList<StixArtifactData>();
+                        for (BlackboardArtifact a : combinedArts) {
+                            artData.add(new StixArtifactData(a.getObjectID(), id, "AddressObject"));
+                        }
+                        return new ObservableResult(id, "AddressObject: Found a match for " + searchString,
+                                spacing, ObservableResult.ObservableState.TRUE, artData);
+                    }
+
+                    return new ObservableResult(id, "AddressObject: Found no matches for " + searchString,
+                            spacing, ObservableResult.ObservableState.FALSE, null);
+            
         } catch (TskCoreException ex) {
             return new ObservableResult(id, "AddressObject: Exception during evaluation: " + ex.getLocalizedMessage(),
                     spacing, ObservableResult.ObservableState.INDETERMINATE, null);
         }
     }
 
+    /**
+     * Set up the warning for any fields in the object that aren't supported.
+     */
+    private void setUnsupportedFieldWarnings(){
+        List<String> fieldNames = new ArrayList<String>();
+        
+        if(obj.getVLANName() != null){
+            fieldNames.add("VLAN_Name");
+        }
+        if(obj.getVLANName() != null){
+            fieldNames.add("VLAN_Num");
+        }
+        
+        String warningStr = "";
+        for(String name:fieldNames){
+            if(! warningStr.isEmpty()){
+                warningStr += ", ";
+            }
+            warningStr += name;
+        }
+        
+        addWarning("Unsupported field(s): " + warningStr);
+    }
 }

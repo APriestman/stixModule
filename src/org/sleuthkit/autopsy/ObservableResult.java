@@ -37,11 +37,6 @@ public class ObservableResult {
     private String description = "";
     private List<StixArtifactData> artifacts;
 
-    /*
-     public ObservableResult(String a_description, ObservableState a_state){
-     state = a_state;
-     description = a_description;
-     }*/
     public ObservableResult(String a_id, String a_desc, String a_spacing,
             ObservableState a_state, List<StixArtifactData> a_artifacts) {
         state = a_state;
@@ -59,10 +54,20 @@ public class ObservableResult {
         return state;
     }
 
+    /**
+     * Returns true if the ObservableResult is currently true.
+     * Note: A false result here does not mean the state is false; it could also be indeterminate.
+     * @return true if the ObservableResult is true, false if it is false or indeterminate
+     */
     public boolean isTrue() {
         return (state == ObservableState.TRUE);
     }
 
+    /**
+     * Returns true if the ObservableResult is currently false.
+     * Note: A false result here does not mean the state is true; it could also be indeterminate.
+     * @return true if the ObservableResult is false, false if it is true or indeterminate
+     */
     public boolean isFalse() {
         return (state == ObservableState.FALSE);
     }
@@ -75,6 +80,12 @@ public class ObservableResult {
         return artifacts;
     }
 
+    /**
+     * Add a new result to the current state
+     * 
+     * @param a_result The new result to add
+     * @param a_operator AND or OR
+     */
     public void addResult(ObservableResult a_result, OperatorTypeEnum a_operator) {
         addResult(a_result.getDescription(), a_result.getState(),
                 a_result.getArtifacts(), a_operator);
@@ -83,9 +94,9 @@ public class ObservableResult {
     /**
      * Add a new result to the current state.
      *
-     * @param a_description
-     * @param a_state
-     * @param a_operator
+     * @param a_description Description of the observable and testing done
+     * @param a_state State of what we're adding (true, false, or indeterminate)
+     * @param a_operator AND or OR
      */
     private void addResult(String a_description, ObservableState a_state,
             List<StixArtifactData> a_artifacts, OperatorTypeEnum a_operator) {
@@ -107,12 +118,18 @@ public class ObservableResult {
                     // Previous state false + new state true => stay false
                 } else if (state == ObservableState.TRUE) {
                     // Previous state true + new state true => stay true and add artifacts
+                    if((artifacts == null) && (a_artifacts != null)){
+                        artifacts = new ArrayList<StixArtifactData>();
+                    }
                     if (a_artifacts != null) {
                         artifacts.addAll(a_artifacts);
                     }
                 } else {
                     // If the previous state was indeterminate, change it to true and add artifacts
                     state = ObservableState.TRUE;
+                    if((artifacts == null) && (a_artifacts != null)){
+                        artifacts = new ArrayList<StixArtifactData>();
+                    }
                     if (a_artifacts != null) {
                         artifacts.addAll(a_artifacts);
                     }
@@ -123,6 +140,9 @@ public class ObservableResult {
                 // If we now have a true, the whole thing is true regardless of previous state.
                 // Add the new artifacts.
                 state = ObservableState.TRUE;
+                if((artifacts == null) && (a_artifacts != null)){
+                    artifacts = new ArrayList<StixArtifactData>();
+                }
                 if (a_artifacts != null) {
                     artifacts.addAll(a_artifacts);
                 }
@@ -143,6 +163,11 @@ public class ObservableResult {
 
     }
 
+    /**
+     * Add to the description string.
+     * Mostly just to make things cleaner by not testing for null all over the place.
+     * @param a_desc New part of the description to add
+     */
     private void addToDesc(String a_desc) {
         if (description == null) {
             description = a_desc;

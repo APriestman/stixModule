@@ -164,9 +164,12 @@ public class EvalEmailObj extends EvaluatableObject {
         }
     }
 
-    /*
-     * Add a set of hits to the final list of hits. The final list is the artifacts
-     * found in each set.
+    /**
+     * Add a set of hits to the final set of hits.
+     * Removes any artifacts that aren't found in the new set. 
+     * The final list is the artifacts found in all sets.
+     * @param newHits The new hits to add to the list
+     * @param finalHitsStarted Whether we've started the list or not
      */
     private void combineHits(List<BlackboardArtifact> newHits, boolean finalHitsStarted) {
         if (finalHitsStarted && (finalHits != null)) {
@@ -176,9 +179,9 @@ public class EvalEmailObj extends EvaluatableObject {
         }
     }
 
-    /*
+    /**
      * Test to see if the Email Object has any fields set that we don't support right now.
-     * Returns a list of unsupported fields found.
+     * @return a list of unsupported fields found.
      */
     private String getListOfUnsupportedFields() {
         String fieldNames = "";

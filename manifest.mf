@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
-OpenIDE-Module: org.sleuthkit.autopsy.stix
-OpenIDE-Module-Layer: org/sleuthkit/autopsy/stix/layer.xml
-OpenIDE-Module-Localizing-Bundle: org/sleuthkit/autopsy/stix/Bundle.properties
+OpenIDE-Module: org.sleuthkit.autopsy.modules.stix
+OpenIDE-Module-Layer: org/sleuthkit/autopsy/modules/stix/layer.xml
+OpenIDE-Module-Localizing-Bundle: org/sleuthkit/autopsy/modules/stix/Bundle.properties
 OpenIDE-Module-Specification-Version: 1.0
 

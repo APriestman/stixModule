@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.sleuthkit.autopsy.stix;
+package org.sleuthkit.autopsy.modules.stix;
 
 import java.io.File;
 import javax.swing.JFileChooser;

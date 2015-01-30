@@ -35,7 +35,7 @@ import org.mitre.cybox.objects.WindowsSystem;
 /**
  *
  */
-public class EvalSystemObj extends EvaluatableObject {
+class EvalSystemObj extends EvaluatableObject {
 
     private final SystemObjectType obj;
 
@@ -56,8 +56,7 @@ public class EvalSystemObj extends EvaluatableObject {
         // Check which fields are present and record them 
         boolean haveHostname = false;
         // boolean haveDomain = false; 
-        // boolean haveProcArch = false;
-        boolean haveProcName = false;
+        boolean haveProcArch = false;
         boolean haveTempDir = false;
         boolean haveProductName = false;
         boolean haveSystemRoot = false;
@@ -69,20 +68,13 @@ public class EvalSystemObj extends EvaluatableObject {
             haveHostname = true;
             searchString = "Hostname \"" + obj.getHostname().getValue().toString() + "\"";
         }
-        if (obj.getProcessor() != null) {
-            haveProcName = true;
-            if (!searchString.isEmpty()) {
+        if(obj.getProcessorArchitecture() != null){
+            haveProcArch = true;
+            if(! searchString.isEmpty()){
                 searchString += " and ";
             }
-            searchString += "Processor \"" + obj.getProcessor().getValue().toString() + "\"";
+            searchString += "Processor architecture \"" + obj.getProcessorArchitecture().getValue().toString() + "\"";
         }
-        //if(obj.getProcessorArchitecture() != null){
-        //    haveProcArch = true;
-        //    if(! searchString.isEmpty()){
-        //        searchString += " and ";
-        //    }
-        //    searchString += "Processor architecture \"" + obj.getProcessorArchitecture().getValue().toString() + "\"";
-        //}
 
         WindowsSystem winSysObj = null;
         if (obj instanceof WindowsSystem) {
@@ -133,7 +125,7 @@ public class EvalSystemObj extends EvaluatableObject {
         }
 
         // Return if we have nothing to search for
-        if (!(haveHostname || haveProcName
+        if (!(haveHostname || haveProcArch
                 || haveTempDir || haveProductName || haveSystemRoot || haveProductID
                 || haveOwner || haveOrganization)) {
             return new ObservableResult(id, "SystemObject: No evaluatable fields found",
@@ -154,8 +146,7 @@ public class EvalSystemObj extends EvaluatableObject {
 
                     boolean foundHostnameMatch = false;
                     //boolean foundDomainMatch = false;
-                    //boolean foundProcArchMatch = false;
-                    boolean foundProcNameMatch = false;
+                    boolean foundProcArchMatch = false;
                     boolean foundTempDirMatch = false;
                     boolean foundProductNameMatch = false;
                     boolean foundSystemRootMatch = false;
@@ -166,9 +157,11 @@ public class EvalSystemObj extends EvaluatableObject {
                     if (haveHostname) {
                         foundHostnameMatch = compareStringObject(obj.getHostname(), info.getCompName());
                     }
-                    if (haveProcName) {
-                        foundProcNameMatch = compareStringObject(obj.getProcessor(),
-                                info.getAttributeValue(BlackboardAttribute.ATTRIBUTE_TYPE.TSK_PROCESSOR_NAME));
+                    if (haveProcArch) {
+                        foundProcArchMatch = compareStringObject(obj.getProcessorArchitecture().getValue().toString(),
+                                obj.getProcessorArchitecture().getCondition(), 
+                                obj.getProcessorArchitecture().getApplyCondition(),
+                                info.getAttributeValue(BlackboardAttribute.ATTRIBUTE_TYPE.TSK_PROCESSOR_ARCHITECTURE));
                     }
                     if (haveTempDir && (winSysObj != null)) {
                         foundTempDirMatch = compareStringObject(winSysObj.getWindowsTempDirectory(),
@@ -196,7 +189,7 @@ public class EvalSystemObj extends EvaluatableObject {
                     }
 
                     if (((!haveHostname) || foundHostnameMatch)
-                            && ((!haveProcName) || foundProcNameMatch)
+                            && ((!haveProcArch) || foundProcArchMatch)
                             && ((!haveTempDir) || foundTempDirMatch)
                             && ((!haveProductName) || foundProductNameMatch)
                             && ((!haveSystemRoot) || foundSystemRootMatch)
@@ -254,8 +247,8 @@ public class EvalSystemObj extends EvaluatableObject {
         if (obj.getOS() != null) {
             fieldNames.add("OS");
         }
-        if (obj.getProcessorArchitecture() != null) {
-            fieldNames.add("Processor_Architecture");
+        if(obj.getProcessor() != null){
+            fieldNames.add("Processor");
         }
         if (obj.getSystemTime() != null) {
             fieldNames.add("System_Time");

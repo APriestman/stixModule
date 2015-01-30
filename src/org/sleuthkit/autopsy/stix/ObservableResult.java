@@ -26,7 +26,7 @@ import org.mitre.cybox.cybox_2.OperatorTypeEnum;
 /**
  *
  */
-public class ObservableResult {
+class ObservableResult {
 
     public enum ObservableState {
 

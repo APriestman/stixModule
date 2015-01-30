@@ -31,7 +31,7 @@ import org.mitre.cybox.objects.Address;
 /**
  *
  */
-public class EvalEmailObj extends EvaluatableObject {
+class EvalEmailObj extends EvaluatableObject {
 
     private final EmailMessage obj;
 

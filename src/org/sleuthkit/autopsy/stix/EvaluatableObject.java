@@ -32,7 +32,7 @@ import org.sleuthkit.datamodel.TskCoreException;
 /**
  *
  */
-public abstract class EvaluatableObject {
+abstract class EvaluatableObject {
 
     private String warnings;
     protected String id;

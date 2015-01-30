@@ -306,6 +306,7 @@ public class STIXReportModule implements GeneralReportModule {
         int count = 0;
 
         for (StixArtifactData s : result.getArtifacts()) {
+            
             // Figure out what name to use for this indicator. If it has a title, 
             // use that. Otherwise use the ID. If both are missing, use a
             // generic heading.

@@ -45,7 +45,7 @@ import org.mitre.cybox.common_2.UnsignedLongObjectPropertyType;
 /**
  *
  */
-public class EvalFileObj extends EvaluatableObject {
+class EvalFileObj extends EvaluatableObject {
 
     private final FileObjectType obj;
 

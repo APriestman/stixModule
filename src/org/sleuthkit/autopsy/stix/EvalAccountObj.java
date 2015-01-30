@@ -34,7 +34,7 @@ import org.mitre.cybox.objects.WindowsUserAccount;
 /**
  *
  */
-public class EvalAccountObj extends EvaluatableObject {
+class EvalAccountObj extends EvaluatableObject {
 
     private AccountObjectType obj;
 

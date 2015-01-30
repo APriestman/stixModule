@@ -30,7 +30,7 @@ import org.sleuthkit.datamodel.TskCoreException;
 /**
  *
  */
-public class StixArtifactData {
+class StixArtifactData {
 
     private AbstractFile file;
     private final String observableId;

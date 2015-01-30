@@ -27,14 +27,13 @@ import org.sleuthkit.datamodel.TskCoreException;
 import java.util.List;
 import java.util.ArrayList;
 import org.mitre.cybox.common_2.ConditionApplicationEnum;
-import org.mitre.cybox.common_2.ConditionTypeEnum;
 
 import org.mitre.cybox.objects.URIObjectType;
 
 /**
  *
  */
-public class EvalURIObj extends EvaluatableObject {
+class EvalURIObj extends EvaluatableObject {
 
     private final URIObjectType obj;
 

@@ -33,7 +33,7 @@ import org.mitre.cybox.objects.WindowsNetworkShare;
 /**
  *
  */
-public class EvalNetworkShareObj extends EvaluatableObject {
+class EvalNetworkShareObj extends EvaluatableObject {
 
     private final WindowsNetworkShare obj;
 

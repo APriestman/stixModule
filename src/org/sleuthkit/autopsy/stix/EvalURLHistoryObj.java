@@ -34,7 +34,7 @@ import org.mitre.cybox.objects.URLHistoryEntryType;
 /**
  *
  */
-public class EvalURLHistoryObj extends EvaluatableObject {
+class EvalURLHistoryObj extends EvaluatableObject {
 
     private final URLHistory obj;
 

@@ -39,7 +39,7 @@ import com.williballenthin.rejistry.*;
 /**
  *
  */
-public class EvalRegistryObj extends EvaluatableObject {
+class EvalRegistryObj extends EvaluatableObject {
 
     private final WindowsRegistryKey obj;
     private final List<RegistryFileInfo> regFiles = new ArrayList<RegistryFileInfo>();
@@ -167,16 +167,20 @@ public class EvalRegistryObj extends EvaluatableObject {
             if (result == null) {
 
                 // Take another shot looking for the key minus the first part of the path (sometimes the
-                // hive file name is here)
-                String[] parts = obj.getKey().getValue().toString().split("\\\\");
-                String newKey = "";
-                for (int i = 1; i < parts.length; i++) {
-                    if (newKey.length() > 0) {
-                        newKey += "\\";
+                // hive file name is here). This should only happen if the hive name started
+                // with "HKEY"
+                if((obj.getHive() != null) 
+                    && obj.getHive().getValue().toString().startsWith("HKEY")){
+                    String[] parts = obj.getKey().getValue().toString().split("\\\\");
+                    String newKey = "";
+                    for (int i = 1; i < parts.length; i++) {
+                        if (newKey.length() > 0) {
+                            newKey += "\\";
+                        }
+                        newKey += parts[i];
                     }
-                    newKey += parts[i];
+                    result = findKey(root, newKey);
                 }
-                result = findKey(root, newKey);
 
                 if (result == null) {
                     return new ObservableResult(id, "RegistryObject: Could not find key " + obj.getKey().getValue(),
